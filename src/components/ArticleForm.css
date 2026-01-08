@@ -1,0 +1,43 @@
+/* Removed: ArticleForm now uses Tailwind classes instead of local CSS */
+/* File left intentionally blank to avoid accidental re-use. */
+
+.category-buttons {
+  display: flex;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.category-buttons button {
+  flex: 1;
+  padding: 10px 12px;
+  border-radius: 6px;
+  border: 1px solid #bdbdbd;
+  background: #f8f8f8;
+  cursor: pointer;
+}
+
+.category-buttons button.active {
+  background: #0b5cff;
+  color: #fff;
+  border-color: #0b5cff;
+}
+
+.form-actions {
+  margin-top: 14px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.submit-btn {
+  background: #28a745;
+  color: #fff;
+  padding: 9px 14px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+@media (max-width: 480px) {
+  .article-form { padding: 12px; }
+  .category-buttons button { padding: 8px; }
+}
