@@ -6,6 +6,7 @@ const ArticleTable = () => {
   const navigate = useNavigate()
   const [articles, setArticles] = useState([])
   const [creatives, setCreatives] = useState([])
+  const [creativeError, setCreativeError] = useState(null)
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState('all') // 'all', 'highlight', 'journalism', 'creative'
   const [creativeDeleteName, setCreativeDeleteName] = useState('')
@@ -38,12 +39,14 @@ const ArticleTable = () => {
     const { data, error } = await supabase
       .from('creatives')
       .select('*')
-      .order('created_at', { ascending: false })
+      .order('id', { ascending: false })
 
     if (error) {
       console.error('Error fetching creatives:', error)
+      setCreativeError(error.message || 'Failed to load creatives')
     } else {
       setCreatives(data || [])
+      setCreativeError(null)
     }
   }
 
@@ -239,7 +242,9 @@ const ArticleTable = () => {
         {/* Creatives Grid */}
         {filter === 'creative' && (
           <>
-            {creatives.length === 0 ? (
+            {creativeError ? (
+              <p className="text-red-400 text-center">{creativeError}</p>
+            ) : creatives.length === 0 ? (
               <p className="text-white text-center">No creatives found.</p>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
