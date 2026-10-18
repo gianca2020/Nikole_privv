@@ -29,6 +29,13 @@ export default function SiteContent() {
     loadSettings()
   }, [])
 
+  useEffect(() => {
+    // Ensure bio state is initialized when settings load
+    if (settings?.bio) {
+      setBio(settings.bio)
+    }
+  }, [settings?.bio])
+
   async function loadSettings() {
     try {
       const data = await getSiteSettings()
