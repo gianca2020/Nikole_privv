@@ -3,7 +3,7 @@ import { supabase } from './supabase'
 export async function uploadToSiteAssets(file, folder) {
   const timestamp = Date.now()
   const random = Math.random().toString(36).substring(2, 10)
-  const ext = file.name.split('.').pop()
+  const ext = file.name ? file.name.split('.').pop() : (folder === 'headshot' ? 'jpg' : 'pdf')
   const filename = `${timestamp}-${random}.${ext}`
   const path = `${folder}/${filename}`
 
