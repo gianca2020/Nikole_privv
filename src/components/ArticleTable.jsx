@@ -9,7 +9,6 @@ const ArticleTable = () => {
   const [creativeError, setCreativeError] = useState(null)
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState('all') // 'all', 'highlight', 'journalism', 'creative'
-  const [creativeDeleteName, setCreativeDeleteName] = useState('')
 
   useEffect(() => {
     const loadData = async () => {

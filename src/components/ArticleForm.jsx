@@ -5,7 +5,6 @@ import { supabase } from '../lib/supabase'
 const ArticleForm = () => {
   const navigate = useNavigate()
 
-  // 🔴 CHANGE: name → title
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [date, setDate] = useState('')
@@ -16,19 +15,16 @@ const ArticleForm = () => {
   const handleSubmit = async (e) => {
     e.preventDefault()
 
-  const payload = {
-  title,
-  description,
-  date,
-  link,
-  image_url: imageUrl || null,
-  is_highlight: category === 'highlight',
-  is_published: category === 'journalism',
-}
+    const payload = {
+      title,
+      description,
+      date,
+      link,
+      image_url: imageUrl || null,
+      is_highlight: category === 'highlight',
+      is_published: category === 'journalism',
+    }
 
-
-    // (optional sanity check)
-    // console.log(payload)
 
     const { error } = await supabase
       .from('articles')
