@@ -27,14 +27,8 @@ const Login = () => {
 
   return (
     <main className="min-h-screen flex flex-col items-center justify-center p-4 bg-paper">
-      <h1
-        style={{ letterSpacing: "0.09em" }}
-        className="mb-8 text-4xl md:text-5xl lg:text-6xl text-ink font-semibold text-center"
-      >
-        Hello{" "}
-        <span className="ml-2 font-script">
-          Nikole
-        </span>
+      <h1 className="mb-8 font-serif text-5xl md:text-6xl font-bold tracking-tight text-ink text-center">
+        Hello, <span className="text-accent">Nikole</span>
       </h1>
 
       <div className="w-full max-w-md bg-surface border border-rule rounded-2xl p-8 shadow-sm">

@@ -29,7 +29,7 @@ function NavItems({ vertical }) {
                     ? 'border-accent bg-paper text-ink'
                     : 'border-transparent text-ink-muted hover:bg-paper hover:text-ink'
                 }`
-              : `shrink-0 px-4 py-3 font-medium border-b-2 ${
+              : `shrink-0 px-3 sm:px-4 py-3 font-medium border-b-2 ${
                   isActive
                     ? 'border-accent text-ink'
                     : 'border-transparent text-ink-muted hover:text-ink'
@@ -87,7 +87,7 @@ export default function Layout() {
             </Button>
           </div>
           <p className="truncate px-4 pb-1 text-sm text-ink-muted">{user?.email}</p>
-          <nav aria-label="Main" className="flex overflow-x-auto px-2">
+          <nav aria-label="Main" className="flex overflow-x-auto px-1 sm:px-2">
             <NavItems />
           </nav>
         </header>

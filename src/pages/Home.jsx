@@ -79,8 +79,8 @@ export default function Home() {
     <div>
       <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="font-serif text-3xl font-bold">
-            Hello <span className="font-script text-4xl font-bold">Nikole</span>
+          <h1 className="font-serif text-4xl font-bold tracking-tight">
+            Hello, <span className="text-accent">Nikole</span>
           </h1>
           <p className="text-ink-muted">Manage your portfolio from here.</p>
         </div>
