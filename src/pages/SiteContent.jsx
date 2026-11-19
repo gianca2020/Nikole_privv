@@ -3,12 +3,20 @@ import { getSiteSettings, updateSiteSettings } from '../lib/siteSettings'
 import { uploadToSiteAssets, deleteFromSiteAssets } from '../lib/upload'
 import { resizeImage, formatFileSize } from '../lib/image'
 import { useToast } from '../components/Toast'
+import { useConfirm } from '../components/ConfirmDialog'
+import useDocumentTitle from '../lib/useDocumentTitle'
+import Button from '../components/ui/Button'
+import FilePicker from '../components/ui/FilePicker'
+import StatusMessage from '../components/ui/StatusMessage'
 
 export default function SiteContent() {
+  useDocumentTitle('Site content')
   const { addToast } = useToast()
+  const { confirm } = useConfirm()
 
   const [settings, setSettings] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState(false)
   const [saving, setSaving] = useState({ headshot: false, bio: false, resume: false })
 
   const [headshot, setHeadshot] = useState({
@@ -38,10 +46,13 @@ export default function SiteContent() {
 
   async function loadSettings() {
     try {
+      setLoading(true)
+      setLoadError(false)
       const data = await getSiteSettings()
       setSettings(data)
       setBio(data.bio || '')
     } catch (error) {
+      setLoadError(true)
       addToast('Failed to load site settings', 'error')
       console.error(error)
     } finally {
@@ -84,18 +95,18 @@ export default function SiteContent() {
     try {
       setSaving(prev => ({ ...prev, headshot: true }))
 
-      // Upload new headshot
+      const previousUrl = settings.headshot_url
+
+      // Upload new headshot, point settings at it, and only then remove the old file,
+      // so a failed save never leaves the site pointing at a deleted image.
       const { url } = await uploadToSiteAssets(headshot.file, 'headshot')
-
-      // Delete old headshot if it exists
-      if (settings.headshot_url) {
-        await deleteFromSiteAssets(settings.headshot_url)
-      }
-
-      // Update settings
       const updated = await updateSiteSettings({ headshot_url: url })
       setSettings(updated)
       setHeadshot({ file: null, preview: null, size: 0 })
+
+      if (previousUrl) {
+        await deleteFromSiteAssets(previousUrl)
+      }
 
       addToast('Headshot updated! It will show on the site when the page loads next time.', 'success')
     } catch (error) {
@@ -150,18 +161,17 @@ export default function SiteContent() {
     try {
       setResume(prev => ({ ...prev, uploading: true }))
 
-      // Upload new resume
+      const previousUrl = settings.resume_url
+
+      // Same order as the headshot: upload, update settings, then delete the old file.
       const { url } = await uploadToSiteAssets(resume.file, 'resume')
-
-      // Delete old resume if it exists
-      if (settings.resume_url) {
-        await deleteFromSiteAssets(settings.resume_url)
-      }
-
-      // Update settings
       const updated = await updateSiteSettings({ resume_url: url })
       setSettings(updated)
       setResume({ file: null, uploading: false })
+
+      if (previousUrl) {
+        await deleteFromSiteAssets(previousUrl)
+      }
 
       addToast('Resume uploaded! It will show on the site when the page loads next time.', 'success')
     } catch (error) {
@@ -172,31 +182,47 @@ export default function SiteContent() {
     }
   }
 
-  async function removeResume() {
+  function removeResume() {
     if (!settings?.resume_url) return
+    const previousUrl = settings.resume_url
 
-    try {
-      await deleteFromSiteAssets(settings.resume_url)
-      const updated = await updateSiteSettings({ resume_url: null })
-      setSettings(updated)
-      addToast('Resume removed. The old one will show on the site.', 'success')
-    } catch (error) {
-      addToast('Failed to remove resume', 'error')
-      console.error(error)
-    }
+    confirm(
+      'Remove your resume from the site? Visitors will no longer be able to download it.',
+      async () => {
+        try {
+          // Clear the setting first, then delete the file.
+          const updated = await updateSiteSettings({ resume_url: null })
+          setSettings(updated)
+          await deleteFromSiteAssets(previousUrl)
+          addToast('Resume removed from your site.', 'success')
+        } catch (error) {
+          addToast('Failed to remove resume', 'error')
+          console.error(error)
+        }
+      },
+      undefined,
+      { confirmLabel: 'Remove', pendingLabel: 'Removing…' }
+    )
   }
 
   if (loading) {
+    return <StatusMessage kind="loading" />
+  }
+
+  if (loadError) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <p className="text-white text-xl">Loading...</p>
-      </div>
+      <StatusMessage
+        kind="error"
+        message="Couldn't load your site content. Check your connection and try again."
+        actionLabel="Try again"
+        onAction={loadSettings}
+      />
     )
   }
 
   return (
     <div className="space-y-8">
-      <h2 className="text-3xl font-bold text-white">Site Content</h2>
+      <h2 className="font-serif text-3xl font-bold text-white">Site Content</h2>
 
       {/* === HEADSHOT === */}
       <div className="bg-white/5 rounded-lg p-8 border border-white/10">
@@ -226,26 +252,24 @@ export default function SiteContent() {
         )}
 
         <div className="flex gap-3">
-          <label className="flex-1">
-            <input
-              type="file"
-              accept="image/*"
-              onChange={handleHeadshotSelect}
-              className="hidden"
-              disabled={saving.headshot}
-            />
-            <span className="block px-4 py-3 rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:bg-blue-600/50 font-medium text-center cursor-pointer">
-              {saving.headshot ? 'Uploading...' : headshot.file ? 'Change Image' : 'Choose Image'}
-            </span>
-          </label>
+          <FilePicker
+            className="flex-1"
+            accept="image/*"
+            onChange={handleHeadshotSelect}
+            disabled={saving.headshot}
+          >
+            {saving.headshot ? 'Uploading...' : headshot.file ? 'Change Image' : 'Choose Image'}
+          </FilePicker>
           {headshot.file && (
-            <button
+            <Button
+              variant="success"
+              size="lg"
+              className="flex-1"
               onClick={saveHeadshot}
               disabled={saving.headshot}
-              className="flex-1 px-4 py-3 rounded-lg bg-green-600 text-white hover:bg-green-700 disabled:bg-green-600/50 font-medium"
             >
               {saving.headshot ? 'Saving...' : 'Save'}
-            </button>
+            </Button>
           )}
         </div>
       </div>
@@ -260,12 +284,7 @@ export default function SiteContent() {
             <div className="bg-white/5 rounded-lg p-4 mb-6 whitespace-pre-wrap text-white leading-relaxed">
               {bio || '(No bio yet)'}
             </div>
-            <button
-              onClick={() => setBioEditing(true)}
-              className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 font-medium"
-            >
-              Edit
-            </button>
+            <Button onClick={() => setBioEditing(true)}>Edit</Button>
           </div>
         ) : (
           <div>
@@ -277,22 +296,19 @@ export default function SiteContent() {
             />
             <p className="text-white/60 text-xs mb-4">{bio.length} characters</p>
             <div className="flex gap-3">
-              <button
-                onClick={saveBio}
-                disabled={saving.bio}
-                className="flex-1 px-4 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700 disabled:bg-green-600/50 font-medium"
-              >
+              <Button variant="success" className="flex-1" onClick={saveBio} disabled={saving.bio}>
                 {saving.bio ? 'Saving...' : 'Save'}
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="secondary"
+                className="flex-1"
                 onClick={() => {
                   setBioEditing(false)
                   setBio(settings?.bio || '')
                 }}
-                className="flex-1 px-4 py-2 rounded-lg bg-white/10 text-white hover:bg-white/20 font-medium"
               >
                 Cancel
-              </button>
+              </Button>
             </div>
           </div>
         )}
@@ -324,34 +340,29 @@ export default function SiteContent() {
         )}
 
         <div className="flex gap-3">
-          <label className="flex-1">
-            <input
-              type="file"
-              accept="application/pdf"
-              onChange={handleResumeSelect}
-              className="hidden"
-              disabled={resume.uploading}
-            />
-            <span className="block px-4 py-3 rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:bg-blue-600/50 font-medium text-center cursor-pointer">
-              {resume.uploading ? 'Uploading...' : resume.file ? 'Change PDF' : 'Choose PDF'}
-            </span>
-          </label>
+          <FilePicker
+            className="flex-1"
+            accept="application/pdf"
+            onChange={handleResumeSelect}
+            disabled={resume.uploading}
+          >
+            {resume.uploading ? 'Uploading...' : resume.file ? 'Change PDF' : 'Choose PDF'}
+          </FilePicker>
           {resume.file && (
-            <button
+            <Button
+              variant="success"
+              size="lg"
+              className="flex-1"
               onClick={saveResume}
               disabled={resume.uploading}
-              className="flex-1 px-4 py-3 rounded-lg bg-green-600 text-white hover:bg-green-700 disabled:bg-green-600/50 font-medium"
             >
               {resume.uploading ? 'Uploading...' : 'Upload'}
-            </button>
+            </Button>
           )}
           {settings?.resume_url && (
-            <button
-              onClick={removeResume}
-              className="px-4 py-3 rounded-lg bg-red-600 text-white hover:bg-red-700 font-medium"
-            >
+            <Button variant="danger" size="lg" onClick={removeResume}>
               Remove
-            </button>
+            </Button>
           )}
         </div>
       </div>

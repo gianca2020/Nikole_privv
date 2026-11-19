@@ -1,50 +1,35 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "../lib/supabase";
+import { useAuth } from "../context/AuthContext";
+import useDocumentTitle from "../lib/useDocumentTitle";
 import GoogleSignIn from "../components/GoogleSignIn";
+import Button from "../components/ui/Button";
 
 const Login = () => {
+  useDocumentTitle("Sign in");
   const navigate = useNavigate();
-  const [checking, setChecking] = useState(true);
+  const { user, isAdmin, loading, signOut } = useAuth();
 
+  // Only approved admins are sent on; a signed-in non-admin stays here and sees why.
   useEffect(() => {
-    // Check for existing session
-    const checkSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        navigate("/dashboard");
-      } else {
-        setChecking(false);
-      }
-    };
+    if (!loading && isAdmin) {
+      navigate("/dashboard", { replace: true });
+    }
+  }, [loading, isAdmin, navigate]);
 
-    checkSession();
-
-    // Listen for auth state changes (handles OAuth callback)
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === 'SIGNED_IN' && session) {
-        navigate("/dashboard");
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, [navigate]);
-
-  if (checking) {
+  if (loading || isAdmin) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#1F1F1F]">
-        <p className="text-[#F6F1E8]">Loading...</p>
+      <div className="min-h-screen flex items-center justify-center bg-ink">
+        <p role="status" className="text-paper">Loading...</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-[#1F1F1F]">
+    <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-ink">
       <h1
         style={{ letterSpacing: "0.09em" }}
-        className="transform -translate-y-6 md:-translate-y-10 text-4xl md:text-5xl lg:text-6xl text-[#F6F1E8] font-semibold"
+        className="transform -translate-y-6 md:-translate-y-10 text-4xl md:text-5xl lg:text-6xl text-paper font-semibold"
       >
         Hello{" "}
         <span
@@ -55,13 +40,23 @@ const Login = () => {
         </span>
       </h1>
 
-      <div className="w-[90vw] sm:w-[70vw] md:w-[50vw] lg:w-[40vw] max-w-lg bg-[#F6F1E8]/80 backdrop-blur-md border border-white/30 rounded-2xl p-8 shadow-lg">
-        <h2 className="text-center text-2xl md:text-3xl font-semibold text-[#1F1F1F] mb-6">
+      <div className="surface-paper w-[90vw] sm:w-[70vw] md:w-[50vw] lg:w-[40vw] max-w-lg bg-paper/80 backdrop-blur-md border border-white/30 rounded-2xl p-8 shadow-lg">
+        <h2 className="text-center text-2xl md:text-3xl font-semibold text-ink mb-6">
           Login
         </h2>
 
-        {/* Google login */}
-        <GoogleSignIn />
+        {user ? (
+          <div role="alert" className="text-center">
+            <p className="text-ink mb-4">
+              <strong>{user.email}</strong> doesn't have access to this admin.
+            </p>
+            <Button variant="secondary" onClick={signOut}>
+              Use a different Google account
+            </Button>
+          </div>
+        ) : (
+          <GoogleSignIn />
+        )}
       </div>
     </div>
   );

@@ -1,28 +1,24 @@
 import { useAuth } from '../context/AuthContext'
-import { useNavigate, useLocation } from 'react-router-dom'
-import { Outlet } from 'react-router-dom'
+import { NavLink, Outlet, useNavigate } from 'react-router-dom'
+
+const navItems = [
+  { label: 'Home', path: '/dashboard', end: true },
+  { label: 'Articles', path: '/dashboard/articles' },
+  { label: 'Creatives', path: '/dashboard/creative' },
+  { label: 'Site Content', path: '/dashboard/site' },
+]
 
 export default function Layout() {
   const { user, signOut } = useAuth()
   const navigate = useNavigate()
-  const location = useLocation()
-
-  const navItems = [
-    { label: 'Home', path: '/dashboard' },
-    { label: 'Articles', path: '/dashboard/articles' },
-    { label: 'Creatives', path: '/dashboard/creative' },
-    { label: 'Site Content', path: '/dashboard/site' },
-  ]
 
   const handleSignOut = async () => {
     await signOut()
     navigate('/')
   }
 
-  const isActive = (path) => location.pathname === path
-
   return (
-    <div className="min-h-screen bg-[#1F1F1F]">
+    <div className="min-h-screen bg-ink">
       {/* Header */}
       <header className="bg-[#2a2a2a] border-b border-white/10">
         <div className="max-w-7xl mx-auto px-6 py-4">
@@ -41,22 +37,25 @@ export default function Layout() {
         </div>
       </header>
 
-      {/* Navigation */}
-      <nav className="bg-[#2a2a2a] border-b border-white/10">
+      {/* Navigation: prefix matching keeps the section highlighted on edit pages */}
+      <nav aria-label="Main" className="bg-[#2a2a2a] border-b border-white/10">
         <div className="max-w-7xl mx-auto px-6">
           <div className="flex gap-1 flex-wrap">
             {navItems.map((item) => (
-              <button
+              <NavLink
                 key={item.path}
-                onClick={() => navigate(item.path)}
-                className={`px-4 py-3 font-medium transition ${
-                  isActive(item.path)
-                    ? 'text-white border-b-2 border-blue-500'
-                    : 'text-white/60 hover:text-white'
-                }`}
+                to={item.path}
+                end={item.end}
+                className={({ isActive }) =>
+                  `px-4 py-3 font-medium transition border-b-2 ${
+                    isActive
+                      ? 'text-white border-paper'
+                      : 'text-white/70 border-transparent hover:text-white'
+                  }`
+                }
               >
                 {item.label}
-              </button>
+              </NavLink>
             ))}
           </div>
         </div>

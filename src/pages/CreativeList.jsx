@@ -3,14 +3,18 @@ import { useNavigate } from 'react-router-dom'
 import { listCreatives, deleteCreative } from '../lib/creatives'
 import { useToast } from '../components/Toast'
 import { useConfirm } from '../components/ConfirmDialog'
+import useDocumentTitle from '../lib/useDocumentTitle'
+import StatusMessage from '../components/ui/StatusMessage'
 
 export default function CreativeList() {
+  useDocumentTitle('Creatives')
   const navigate = useNavigate()
   const { addToast } = useToast()
   const { confirm } = useConfirm()
 
   const [creatives, setCreatives] = useState([])
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState(false)
 
   useEffect(() => {
     loadCreatives()
@@ -19,9 +23,11 @@ export default function CreativeList() {
   async function loadCreatives() {
     try {
       setLoading(true)
+      setLoadError(false)
       const data = await listCreatives()
       setCreatives(data)
     } catch (error) {
+      setLoadError(true)
       addToast('Failed to load creatives', 'error')
       console.error(error)
     } finally {
@@ -43,17 +49,24 @@ export default function CreativeList() {
   }
 
   if (loading) {
+    return <StatusMessage kind="loading" />
+  }
+
+  if (loadError) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <p className="text-white text-xl">Loading...</p>
-      </div>
+      <StatusMessage
+        kind="error"
+        message="Couldn't load your creatives. Check your connection and try again."
+        actionLabel="Try again"
+        onAction={loadCreatives}
+      />
     )
   }
 
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-3xl font-bold text-white">Creatives</h2>
+        <h2 className="font-serif text-3xl font-bold text-white">Creatives</h2>
         <button
           onClick={() => navigate('/dashboard/creative/new')}
           className="px-4 py-2 rounded-lg bg-purple-600 text-white hover:bg-purple-700 font-medium"
@@ -63,7 +76,12 @@ export default function CreativeList() {
       </div>
 
       {creatives.length === 0 ? (
-        <p className="text-white/60 text-center py-8">No creatives found.</p>
+        <StatusMessage
+          kind="empty"
+          message="No creatives yet."
+          actionLabel="Add your first creative"
+          onAction={() => navigate('/dashboard/creative/new')}
+        />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {creatives.map(creative => (

@@ -1,28 +1,52 @@
-import { useState, useEffect } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useState, useEffect, useRef } from 'react'
+import { useParams, useNavigate, Link } from 'react-router-dom'
 import { getArticle, createArticle, updateArticle } from '../lib/articles'
 import { useToast } from '../components/Toast'
+import useDocumentTitle from '../lib/useDocumentTitle'
+import Button from '../components/ui/Button'
+import Field from '../components/ui/Field'
+import StatusMessage from '../components/ui/StatusMessage'
+
+const emptyForm = {
+  title: '',
+  description: '',
+  date: '',
+  link: '',
+  image_url: '',
+  outlet: '',
+  is_highlight: false,
+  is_published: false,
+}
+
+// Rows created before a column existed (e.g. `outlet`) come back with nulls.
+// Normalize so inputs stay controlled and the save handler can trim safely.
+function toForm(data) {
+  return {
+    title: data.title ?? '',
+    description: data.description ?? '',
+    date: data.date ? String(data.date).slice(0, 10) : '',
+    link: data.link ?? '',
+    image_url: data.image_url ?? '',
+    outlet: data.outlet ?? '',
+    is_highlight: Boolean(data.is_highlight),
+    is_published: Boolean(data.is_published),
+  }
+}
 
 export default function ArticleEdit() {
   const { id } = useParams()
   const navigate = useNavigate()
   const { addToast } = useToast()
   const isNew = !id
+  useDocumentTitle(isNew ? 'New article' : 'Edit article')
 
   const [loading, setLoading] = useState(!isNew)
   const [saving, setSaving] = useState(false)
   const [imagePreview, setImagePreview] = useState(null)
+  const [errors, setErrors] = useState({})
+  const titleRef = useRef(null)
 
-  const [form, setForm] = useState({
-    title: '',
-    description: '',
-    date: '',
-    link: '',
-    image_url: '',
-    outlet: '',
-    is_highlight: false,
-    is_published: false,
-  })
+  const [form, setForm] = useState(emptyForm)
 
   useEffect(() => {
     if (!isNew) {
@@ -33,9 +57,10 @@ export default function ArticleEdit() {
   async function loadArticle() {
     try {
       const data = await getArticle(id)
-      setForm(data)
-      if (data.image_url) {
-        setImagePreview(data.image_url)
+      const next = toForm(data)
+      setForm(next)
+      if (next.image_url) {
+        setImagePreview(next.image_url)
       }
     } catch {
       addToast('Failed to load article', 'error')
@@ -51,6 +76,7 @@ export default function ArticleEdit() {
       ...prev,
       [name]: type === 'checkbox' ? checked : value,
     }))
+    if (errors[name]) setErrors(prev => ({ ...prev, [name]: undefined }))
   }
 
   function handleImageUrlChange(e) {
@@ -72,7 +98,8 @@ export default function ArticleEdit() {
     e.preventDefault()
 
     if (!form.title.trim()) {
-      addToast('Title is required', 'error')
+      setErrors({ title: 'Enter a headline for this article.' })
+      titleRef.current?.focus()
       return
     }
 
@@ -82,7 +109,7 @@ export default function ArticleEdit() {
       const payload = {
         title: form.title.trim(),
         description: form.description.trim(),
-        date: form.date,
+        date: form.date || null,
         link: form.link.trim(),
         image_url: form.image_url.trim() || null,
         outlet: form.outlet.trim() || null,
@@ -108,11 +135,7 @@ export default function ArticleEdit() {
   }
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <p className="text-white text-xl">Loading...</p>
-      </div>
-    )
+    return <StatusMessage kind="loading" />
   }
 
   const category = form.is_highlight ? 'highlight' : form.is_published ? 'journalism' : ''
@@ -120,106 +143,91 @@ export default function ArticleEdit() {
   return (
     <div className="max-w-2xl">
       <div className="mb-6">
-        <button
-          onClick={() => navigate('/dashboard/articles')}
-          className="text-white/60 hover:text-white mb-4"
+        <Link
+          to="/dashboard/articles"
+          className="inline-block text-white/70 hover:text-white mb-4"
         >
           ← Back to Articles
-        </button>
-        <h2 className="text-3xl font-bold text-white">
+        </Link>
+        <h2 className="font-serif text-3xl font-bold text-white">
           {isNew ? 'New Article' : 'Edit Article'}
         </h2>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6 bg-white/5 rounded-lg p-8 border border-white/10">
-        {/* Title */}
-        <div>
-          <label className="block text-white font-medium mb-2">Title *</label>
-          <input
-            type="text"
-            name="title"
-            value={form.title}
-            onChange={handleChange}
-            placeholder="Article headline"
-            className="w-full px-4 py-2 rounded-lg bg-white/10 border border-white/20 text-white placeholder-white/40 focus:outline-none focus:border-blue-500"
-          />
-        </div>
+      <form
+        onSubmit={handleSubmit}
+        className="surface-paper space-y-6 bg-paper rounded-lg p-8 border border-rule"
+      >
+        <Field
+          label="Title"
+          required
+          ref={titleRef}
+          type="text"
+          name="title"
+          value={form.title}
+          onChange={handleChange}
+          placeholder="Article headline"
+          error={errors.title}
+        />
 
-        {/* Description */}
-        <div>
-          <label className="block text-white font-medium mb-2">Description</label>
-          <textarea
-            name="description"
-            value={form.description}
-            onChange={handleChange}
-            placeholder="Brief summary"
-            rows={4}
-            className="w-full px-4 py-2 rounded-lg bg-white/10 border border-white/20 text-white placeholder-white/40 focus:outline-none focus:border-blue-500"
-          />
-        </div>
+        <Field
+          label="Description"
+          as="textarea"
+          name="description"
+          value={form.description}
+          onChange={handleChange}
+          placeholder="Brief summary"
+          rows={4}
+        />
 
-        {/* Date */}
-        <div>
-          <label className="block text-white font-medium mb-2">Publication Date</label>
-          <input
-            type="date"
-            name="date"
-            value={form.date}
-            onChange={handleChange}
-            className="w-full px-4 py-2 rounded-lg bg-white/10 border border-white/20 text-white focus:outline-none focus:border-blue-500"
-          />
-        </div>
+        <Field
+          label="Publication Date"
+          type="date"
+          name="date"
+          value={form.date}
+          onChange={handleChange}
+        />
 
-        {/* Link */}
+        <Field
+          label="Article Link"
+          type="url"
+          name="link"
+          value={form.link}
+          onChange={handleChange}
+          placeholder="https://..."
+        />
+
+        <Field
+          label="Outlet (Publication)"
+          type="text"
+          name="outlet"
+          value={form.outlet}
+          onChange={handleChange}
+          placeholder="e.g. The Nation"
+        />
+
         <div>
-          <label className="block text-white font-medium mb-2">Article Link</label>
-          <input
+          <Field
+            label="Image URL"
             type="url"
-            name="link"
-            value={form.link}
-            onChange={handleChange}
-            placeholder="https://..."
-            className="w-full px-4 py-2 rounded-lg bg-white/10 border border-white/20 text-white placeholder-white/40 focus:outline-none focus:border-blue-500"
-          />
-        </div>
-
-        {/* Outlet */}
-        <div>
-          <label className="block text-white font-medium mb-2">Outlet (Publication)</label>
-          <input
-            type="text"
-            name="outlet"
-            value={form.outlet}
-            onChange={handleChange}
-            placeholder="e.g. The Nation"
-            className="w-full px-4 py-2 rounded-lg bg-white/10 border border-white/20 text-white placeholder-white/40 focus:outline-none focus:border-blue-500"
-          />
-        </div>
-
-        {/* Image URL */}
-        <div>
-          <label className="block text-white font-medium mb-2">Image URL</label>
-          <input
-            type="url"
+            name="image_url"
             value={form.image_url}
             onChange={handleImageUrlChange}
             placeholder="https://..."
-            className="w-full px-4 py-2 rounded-lg bg-white/10 border border-white/20 text-white placeholder-white/40 focus:outline-none focus:border-blue-500"
           />
           {imagePreview && (
             <div className="mt-4">
               <img
                 src={imagePreview}
-                alt="Preview"
+                alt="Preview of the article image"
                 className="h-40 w-auto rounded-lg object-cover"
               />
             </div>
           )}
         </div>
 
-        {/* Category */}
-        <div>
-          <label className="block text-white font-medium mb-3">Category</label>
+        <fieldset>
+          <legend className="block text-ink font-medium mb-3">Category</legend>
           <div className="space-y-2">
             <label className="flex items-center gap-3 cursor-pointer">
               <input
@@ -228,9 +236,9 @@ export default function ArticleEdit() {
                 value="highlight"
                 checked={category === 'highlight'}
                 onChange={handleCategoryChange}
-                className="w-4 h-4"
+                className="w-4 h-4 accent-accent"
               />
-              <span className="text-white">Highlight</span>
+              <span className="text-ink">Highlight</span>
             </label>
             <label className="flex items-center gap-3 cursor-pointer">
               <input
@@ -239,29 +247,20 @@ export default function ArticleEdit() {
                 value="journalism"
                 checked={category === 'journalism'}
                 onChange={handleCategoryChange}
-                className="w-4 h-4"
+                className="w-4 h-4 accent-accent"
               />
-              <span className="text-white">Journalism</span>
+              <span className="text-ink">Journalism</span>
             </label>
           </div>
-        </div>
+        </fieldset>
 
-        {/* Actions */}
         <div className="flex gap-3 pt-4">
-          <button
-            type="submit"
-            disabled={saving}
-            className="flex-1 px-4 py-3 rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:bg-blue-600/50 font-medium"
-          >
+          <Button type="submit" size="lg" className="flex-1" disabled={saving}>
             {saving ? 'Saving...' : isNew ? 'Create Article' : 'Save Changes'}
-          </button>
-          <button
-            type="button"
-            onClick={() => navigate('/dashboard/articles')}
-            className="px-4 py-3 rounded-lg bg-white/10 text-white hover:bg-white/20 font-medium"
-          >
+          </Button>
+          <Button variant="secondary" size="lg" onClick={() => navigate('/dashboard/articles')}>
             Cancel
-          </button>
+          </Button>
         </div>
       </form>
     </div>
