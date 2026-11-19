@@ -1,16 +1,23 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { listCreatives, deleteCreative } from '../lib/creatives'
 import { useToast } from '../components/Toast'
 import { useConfirm } from '../components/ConfirmDialog'
+import useDocumentTitle from '../lib/useDocumentTitle'
+import Button from '../components/ui/Button'
+import { buttonClass } from '../components/ui/buttonStyles'
+import ImagePreview from '../components/ui/ImagePreview'
+import StatusMessage from '../components/ui/StatusMessage'
 
 export default function CreativeList() {
+  useDocumentTitle('Creatives')
   const navigate = useNavigate()
   const { addToast } = useToast()
   const { confirm } = useConfirm()
 
   const [creatives, setCreatives] = useState([])
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState(false)
 
   useEffect(() => {
     loadCreatives()
@@ -19,9 +26,11 @@ export default function CreativeList() {
   async function loadCreatives() {
     try {
       setLoading(true)
+      setLoadError(false)
       const data = await listCreatives()
       setCreatives(data)
     } catch (error) {
+      setLoadError(true)
       addToast('Failed to load creatives', 'error')
       console.error(error)
     } finally {
@@ -33,7 +42,7 @@ export default function CreativeList() {
     confirm(`Delete "${title}"? This can't be undone.`, async () => {
       try {
         await deleteCreative(id)
-        setCreatives(creatives.filter(c => c.id !== id))
+        setCreatives(prev => prev.filter(c => c.id !== id))
         addToast('Creative deleted', 'success')
       } catch (error) {
         addToast('Failed to delete creative', 'error')
@@ -43,64 +52,79 @@ export default function CreativeList() {
   }
 
   if (loading) {
+    return <StatusMessage kind="loading" />
+  }
+
+  if (loadError) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <p className="text-white text-xl">Loading...</p>
-      </div>
+      <StatusMessage
+        kind="error"
+        message="Couldn't load your creatives. Check your connection and try again."
+        actionLabel="Try again"
+        onAction={loadCreatives}
+      />
     )
   }
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-3xl font-bold text-white">Creatives</h2>
-        <button
-          onClick={() => navigate('/dashboard/creative/new')}
-          className="px-4 py-2 rounded-lg bg-purple-600 text-white hover:bg-purple-700 font-medium"
-        >
+      <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+        <h1 className="font-serif text-3xl font-bold">Creatives</h1>
+        <Link to="/dashboard/creative/new" className={buttonClass({ variant: 'primary' })}>
           + New Creative
-        </button>
+        </Link>
       </div>
 
       {creatives.length === 0 ? (
-        <p className="text-white/60 text-center py-8">No creatives found.</p>
+        <StatusMessage
+          kind="empty"
+          message="No creatives yet."
+          actionLabel="Add your first creative"
+          onAction={() => navigate('/dashboard/creative/new')}
+        />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {creatives.map(creative => (
-            <div key={creative.id} className="bg-white/5 rounded-lg p-6 border border-white/10 hover:border-white/20">
+            <div key={creative.id} className="flex flex-col bg-surface rounded-lg p-6 border border-rule">
               {creative.img_url && (
-                <img
+                <ImagePreview
                   src={creative.img_url}
-                  alt={creative.title}
+                  alt=""
                   className="w-full h-40 object-cover rounded-lg mb-4"
-                  onError={(e) => e.target.style.display = 'none'}
                 />
               )}
-              <h3 className="text-white font-semibold mb-2">{creative.title}</h3>
-              <p className="text-white/60 text-sm mb-4">{creative.role_description}</p>
+              <h2 className="font-serif text-lg font-semibold leading-snug break-words mb-2">{creative.title}</h2>
+              <p className="text-ink-muted text-sm mb-4">{creative.role_description}</p>
               {creative.link && (
                 <a
                   href={creative.link}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-blue-400 hover:text-blue-300 text-sm mb-4 block"
+                  aria-label={`View ${creative.title} (opens in a new tab)`}
+                  className="text-accent underline text-sm mb-4 block"
                 >
-                  View →
+                  View ↗
                 </a>
               )}
-              <div className="flex gap-2">
-                <button
+              <div className="mt-auto flex gap-2">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  className="flex-1"
+                  aria-label={`Edit ${creative.title}`}
                   onClick={() => navigate(`/dashboard/creative/${creative.id}/edit`)}
-                  className="flex-1 px-3 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 text-sm font-medium"
                 >
                   Edit
-                </button>
-                <button
+                </Button>
+                <Button
+                  variant="dangerOutline"
+                  size="sm"
+                  className="flex-1"
+                  aria-label={`Delete ${creative.title}`}
                   onClick={() => handleDelete(creative.id, creative.title)}
-                  className="flex-1 px-3 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 text-sm font-medium"
                 >
                   Delete
-                </button>
+                </Button>
               </div>
             </div>
           ))}

@@ -1,17 +1,52 @@
-import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useState, useEffect, useMemo } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 import { listArticles, deleteArticle } from '../lib/articles'
+import { storyMeta } from '../lib/format'
 import { useToast } from '../components/Toast'
 import { useConfirm } from '../components/ConfirmDialog'
+import useDocumentTitle from '../lib/useDocumentTitle'
+import Button from '../components/ui/Button'
+import { buttonClass } from '../components/ui/buttonStyles'
+import StatusMessage from '../components/ui/StatusMessage'
+
+const CATEGORY_LABELS = {
+  highlight: 'Highlight',
+  journalism: 'Journalism',
+  uncategorized: 'Not categorized',
+}
+
+const BADGE_STYLES = {
+  highlight: 'bg-accent text-white border-accent',
+  journalism: 'bg-surface text-ink-muted border-rule',
+  uncategorized: 'bg-surface text-ink-muted border-dashed border-ink-muted',
+}
+
+// Mirrors the edit form: Highlight and Journalism are the only two choices;
+// a row with neither flag is shown honestly instead of being called Journalism.
+function categoryOf(article) {
+  if (article.is_highlight) return 'highlight'
+  if (article.is_published) return 'journalism'
+  return 'uncategorized'
+}
+
+function sortTime(article, sort) {
+  const value = sort === 'published' ? article.date || article.created_at : article.created_at
+  const time = Date.parse(value)
+  return Number.isNaN(time) ? 0 : time
+}
 
 export default function ArticleList() {
+  useDocumentTitle('Articles')
   const navigate = useNavigate()
   const { addToast } = useToast()
   const { confirm } = useConfirm()
 
   const [articles, setArticles] = useState([])
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState(false)
   const [filter, setFilter] = useState('all')
+  const [query, setQuery] = useState('')
+  const [sort, setSort] = useState('published')
 
   useEffect(() => {
     loadArticles()
@@ -20,9 +55,11 @@ export default function ArticleList() {
   async function loadArticles() {
     try {
       setLoading(true)
+      setLoadError(false)
       const data = await listArticles()
       setArticles(data)
     } catch (error) {
+      setLoadError(true)
       addToast('Failed to load articles', 'error')
       console.error(error)
     } finally {
@@ -30,11 +67,11 @@ export default function ArticleList() {
     }
   }
 
-  async function handleDelete(id, title) {
+  function handleDelete(id, title) {
     confirm(`Delete "${title}"? This can't be undone.`, async () => {
       try {
         await deleteArticle(id)
-        setArticles(articles.filter(a => a.id !== id))
+        setArticles(prev => prev.filter(a => a.id !== id))
         addToast('Article deleted', 'success')
       } catch (error) {
         addToast('Failed to delete article', 'error')
@@ -43,99 +80,166 @@ export default function ArticleList() {
     })
   }
 
-  const filteredArticles = articles.filter(article => {
-    if (filter === 'all') return true
-    if (filter === 'highlight') return article.is_highlight === true
-    if (filter === 'journalism') return article.is_highlight === false
-    return true
-  })
+  const counts = useMemo(() => {
+    const result = { all: articles.length, highlight: 0, journalism: 0, uncategorized: 0 }
+    articles.forEach(a => { result[categoryOf(a)] += 1 })
+    return result
+  }, [articles])
+
+  const visibleArticles = useMemo(() => {
+    const needle = query.trim().toLowerCase()
+    return articles
+      .filter(a => filter === 'all' || categoryOf(a) === filter)
+      .filter(a => {
+        if (!needle) return true
+        return (a.title || '').toLowerCase().includes(needle) || (a.outlet || '').toLowerCase().includes(needle)
+      })
+      .sort((a, b) => sortTime(b, sort) - sortTime(a, sort))
+  }, [articles, filter, query, sort])
 
   if (loading) {
+    return <StatusMessage kind="loading" />
+  }
+
+  if (loadError) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <p className="text-white text-xl">Loading...</p>
-      </div>
+      <StatusMessage
+        kind="error"
+        message="Couldn't load your articles. Check your connection and try again."
+        actionLabel="Try again"
+        onAction={loadArticles}
+      />
     )
   }
 
+  const filters = ['all', 'highlight', 'journalism', ...(counts.uncategorized > 0 ? ['uncategorized'] : [])]
+  const filterLabel = (f) => (f === 'all' ? 'All' : f === 'highlight' ? 'Highlights' : CATEGORY_LABELS[f])
+
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-3xl font-bold text-white">Articles</h2>
-        <button
-          onClick={() => navigate('/dashboard/articles/new')}
-          className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 font-medium"
-        >
+      <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+        <h1 className="font-serif text-3xl font-bold">Articles</h1>
+        <Link to="/dashboard/articles/new" className={buttonClass({ variant: 'primary' })}>
           + New Article
-        </button>
+        </Link>
       </div>
 
-      {/* Filters */}
-      <div className="flex gap-2 mb-6 flex-wrap">
-        {['all', 'highlight', 'journalism'].map(f => (
-          <button
-            key={f}
-            onClick={() => setFilter(f)}
-            className={`px-4 py-2 rounded-full font-medium ${
-              filter === f
-                ? 'bg-blue-600 text-white'
-                : 'bg-white/20 text-white hover:bg-white/30'
-            }`}
-          >
-            {f.charAt(0).toUpperCase() + f.slice(1)}
-          </button>
-        ))}
-      </div>
-
-      {/* Table */}
-      {filteredArticles.length === 0 ? (
-        <p className="text-white/60 text-center py-8">No articles found.</p>
+      {articles.length === 0 ? (
+        <StatusMessage
+          kind="empty"
+          message="No articles yet."
+          actionLabel="Add your first article"
+          onAction={() => navigate('/dashboard/articles/new')}
+        />
       ) : (
-        <div className="overflow-x-auto bg-white/5 rounded-lg border border-white/10">
-          <table className="w-full">
-            <thead className="border-b border-white/10">
-              <tr>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-white">Title</th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-white">Category</th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-white">Date</th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-white">Outlet</th>
-                <th className="px-6 py-4 text-right text-sm font-semibold text-white">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredArticles.map(article => (
-                <tr key={article.id} className="border-b border-white/5 hover:bg-white/5">
-                  <td className="px-6 py-4 text-sm text-white">{article.title || 'Untitled'}</td>
-                  <td className="px-6 py-4 text-sm">
-                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                      article.is_highlight
-                        ? 'bg-blue-600/30 text-blue-200'
-                        : 'bg-green-600/30 text-green-200'
-                    }`}>
-                      {article.is_highlight ? 'Highlight' : 'Journalism'}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-sm text-white">{article.date || 'N/A'}</td>
-                  <td className="px-6 py-4 text-sm text-white/60">{article.outlet || '—'}</td>
-                  <td className="px-6 py-4 text-right text-sm space-x-2">
-                    <button
-                      onClick={() => navigate(`/dashboard/articles/${article.id}/edit`)}
-                      className="px-3 py-1 rounded bg-blue-600 text-white hover:bg-blue-700 text-xs font-medium"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => handleDelete(article.id, article.title || 'Untitled')}
-                      className="px-3 py-1 rounded bg-red-600 text-white hover:bg-red-700 text-xs font-medium"
-                    >
-                      Delete
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <>
+          <div className="flex flex-wrap items-end gap-4 mb-4">
+            <div className="grow sm:max-w-sm">
+              <label htmlFor="article-search" className="sr-only">Search articles by headline or outlet</label>
+              <input
+                id="article-search"
+                type="search"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Search headline or outlet"
+                className="w-full px-3 py-2 rounded-md bg-white border border-rule text-ink placeholder:text-ink-muted/70"
+              />
+            </div>
+            <div>
+              <label htmlFor="article-sort" className="block text-sm text-ink-muted mb-1">Sort by</label>
+              <select
+                id="article-sort"
+                value={sort}
+                onChange={(e) => setSort(e.target.value)}
+                className="px-3 py-2 rounded-md bg-white border border-rule text-ink"
+              >
+                <option value="published">Newest published</option>
+                <option value="added">Recently added</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="flex gap-2 mb-4 flex-wrap" role="group" aria-label="Filter by category">
+            {filters.map(f => (
+              <button
+                key={f}
+                type="button"
+                aria-pressed={filter === f}
+                onClick={() => setFilter(f)}
+                className={`px-4 py-1.5 rounded-full border text-sm font-medium ${
+                  filter === f
+                    ? 'bg-ink text-paper border-ink'
+                    : 'bg-surface text-ink border-rule hover:bg-white'
+                }`}
+              >
+                {filterLabel(f)} <span className="opacity-80">({counts[f]})</span>
+              </button>
+            ))}
+          </div>
+
+          <p aria-live="polite" className="text-sm text-ink-muted mb-2">
+            Showing {visibleArticles.length} of {articles.length}
+          </p>
+
+          {visibleArticles.length === 0 ? (
+            <p className="text-ink-muted text-center py-8">No articles match your search or filter.</p>
+          ) : (
+            <ul className="border-t border-rule">
+              {visibleArticles.map(article => {
+                const title = article.title || 'Untitled'
+                const category = categoryOf(article)
+                const meta = storyMeta(article)
+                return (
+                  <li
+                    key={article.id}
+                    className="flex flex-col gap-3 border-b border-rule py-4 md:flex-row md:items-start md:justify-between md:gap-6"
+                  >
+                    <div className="min-w-0">
+                      <h2 className="font-serif text-lg font-semibold leading-snug break-words line-clamp-2 md:line-clamp-none">
+                        {title}
+                      </h2>
+                      <p className="text-sm text-ink-muted mt-1">{meta || 'No outlet or date'}</p>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2 md:shrink-0 md:justify-end">
+                      <span
+                        className={`rounded-full border px-2.5 py-0.5 text-xs font-medium whitespace-nowrap ${BADGE_STYLES[category]}`}
+                      >
+                        {CATEGORY_LABELS[category]}
+                      </span>
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        aria-label={`Edit ${title}`}
+                        onClick={() => navigate(`/dashboard/articles/${article.id}/edit`)}
+                      >
+                        Edit
+                      </Button>
+                      {article.link && (
+                        <a
+                          href={article.link}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          aria-label={`Open ${title} (opens in a new tab)`}
+                          className={buttonClass({ variant: 'ghost', size: 'sm' })}
+                        >
+                          Open ↗
+                        </a>
+                      )}
+                      <Button
+                        variant="dangerOutline"
+                        size="sm"
+                        aria-label={`Delete ${title}`}
+                        onClick={() => handleDelete(article.id, title)}
+                      >
+                        Delete
+                      </Button>
+                    </div>
+                  </li>
+                )
+              })}
+            </ul>
+          )}
+        </>
       )}
     </div>
   )

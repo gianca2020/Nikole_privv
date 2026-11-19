@@ -39,6 +39,22 @@ contract before it can be considered production-hardened.
   and independent lint/build CI for this repository.
 - Expanded environment and local Supabase state ignore rules.
 
+## Status update (admin UX foundations branch)
+
+Findings 1 and 2 above predate later work in this repository; current state:
+
+- Finding 1 (client): all `/dashboard` routes are wrapped in `RequireAuth`, which checks
+  the allowlist via `AuthContext`. The legacy `Dashboard`, `ArticleForm`, `ArticleTable`,
+  and `CreativeForm` components were unrouted and have been removed. Server-side
+  enforcement is still a database concern: see `supabase/migrations/` and
+  `supabase/NOTES-live-state.md`; the live policies were not re-verified here.
+- Finding 2: the table component that read `article.name` was removed; the routed pages
+  use `title` consistently. Confirm the deployed column name before relying on it.
+- Finding 3 (partly): sign-in redirects now come from `AuthContext` only, so a signed-in
+  non-admin account stays on the login page with an explanation. Request cancellation and
+  shared error handling are still open.
+- Finding 4 is unchanged.
+
 ## Verification limits
 
 Lint and production build validate static correctness and bundling. No automated
