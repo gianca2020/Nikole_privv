@@ -2,12 +2,33 @@ import { useState, useEffect } from 'react'
 import { getSiteSettings, updateSiteSettings } from '../lib/siteSettings'
 import { uploadToSiteAssets, deleteFromSiteAssets } from '../lib/upload'
 import { resizeImage, formatFileSize } from '../lib/image'
+import { formatDateTime } from '../lib/format'
 import { useToast } from '../components/Toast'
 import { useConfirm } from '../components/ConfirmDialog'
 import useDocumentTitle from '../lib/useDocumentTitle'
+import useUnsavedChangesGuard from '../lib/useUnsavedChangesGuard'
 import Button from '../components/ui/Button'
+import Field from '../components/ui/Field'
 import FilePicker from '../components/ui/FilePicker'
 import StatusMessage from '../components/ui/StatusMessage'
+
+const cardClass = 'bg-surface rounded-lg p-6 sm:p-8 border border-rule'
+
+function paragraphsOf(text) {
+  return text.split(/\n\s*\n/).map(p => p.trim()).filter(Boolean)
+}
+
+function Paragraphs({ text }) {
+  const paragraphs = paragraphsOf(text)
+  if (paragraphs.length === 0) return <p className="text-ink-muted">(No bio yet)</p>
+  return (
+    <div className="space-y-4 leading-relaxed">
+      {paragraphs.map((p, i) => (
+        <p key={i} className="whitespace-pre-line">{p}</p>
+      ))}
+    </div>
+  )
+}
 
 export default function SiteContent() {
   useDocumentTitle('Site content')
@@ -33,16 +54,11 @@ export default function SiteContent() {
     uploading: false,
   })
 
+  useUnsavedChangesGuard(bioEditing && bio !== (settings?.bio || ''))
+
   useEffect(() => {
     loadSettings()
   }, [])
-
-  useEffect(() => {
-    // Ensure bio state is initialized when settings load
-    if (settings?.bio) {
-      setBio(settings.bio)
-    }
-  }, [settings?.bio])
 
   async function loadSettings() {
     try {
@@ -222,14 +238,19 @@ export default function SiteContent() {
 
   return (
     <div className="space-y-8">
-      <h2 className="font-serif text-3xl font-bold text-white">Site Content</h2>
+      <div>
+        <h1 className="font-serif text-3xl font-bold">Site Content</h1>
+        {settings?.updated_at && (
+          <p className="text-ink-muted text-sm mt-1">Last updated {formatDateTime(settings.updated_at)}</p>
+        )}
+      </div>
 
       {/* === HEADSHOT === */}
-      <div className="bg-white/5 rounded-lg p-8 border border-white/10">
-        <div className="flex items-center justify-between mb-6">
+      <section aria-labelledby="headshot-heading" className={cardClass}>
+        <div className="flex flex-wrap items-start justify-between gap-4 mb-6">
           <div>
-            <h3 className="text-2xl font-bold text-white mb-1">Headshot</h3>
-            <p className="text-white/60 text-sm">Approximately 520×574 (will be cropped to fit)</p>
+            <h2 id="headshot-heading" className="font-serif text-2xl font-bold mb-1">Headshot</h2>
+            <p className="text-ink-muted text-sm">Approximately 520×574 (will be cropped to fit)</p>
           </div>
           {settings?.headshot_url && (
             <img
@@ -242,16 +263,16 @@ export default function SiteContent() {
 
         {headshot.preview && (
           <div className="mb-6">
-            <p className="text-white/60 text-sm mb-2">Preview: {formatFileSize(headshot.size)}</p>
+            <p className="text-ink-muted text-sm mb-2">New image preview: {formatFileSize(headshot.size)}</p>
             <img
               src={headshot.preview}
-              alt="Preview"
+              alt="Preview of the new headshot"
               className="w-40 h-52 rounded-lg object-cover"
             />
           </div>
         )}
 
-        <div className="flex gap-3">
+        <div className="flex flex-col gap-3 sm:flex-row">
           <FilePicker
             className="flex-1"
             accept="image/*"
@@ -272,29 +293,39 @@ export default function SiteContent() {
             </Button>
           )}
         </div>
-      </div>
+      </section>
 
       {/* === BIO === */}
-      <div className="bg-white/5 rounded-lg p-8 border border-white/10">
-        <h3 className="text-2xl font-bold text-white mb-4">About / Bio</h3>
-        <p className="text-white/60 text-sm mb-4">Leave a blank line between paragraphs.</p>
+      <section aria-labelledby="bio-heading" className={cardClass}>
+        <h2 id="bio-heading" className="font-serif text-2xl font-bold mb-4">About / Bio</h2>
 
         {!bioEditing ? (
           <div>
-            <div className="bg-white/5 rounded-lg p-4 mb-6 whitespace-pre-wrap text-white leading-relaxed">
-              {bio || '(No bio yet)'}
+            <div className="bg-paper rounded-lg p-4 mb-6">
+              <Paragraphs text={bio} />
             </div>
             <Button onClick={() => setBioEditing(true)}>Edit</Button>
           </div>
         ) : (
           <div>
-            <textarea
+            <Field
+              label="Bio text"
+              hint="Leave a blank line between paragraphs."
+              as="textarea"
               value={bio}
               onChange={(e) => setBio(e.target.value)}
               rows={10}
-              className="w-full px-4 py-3 rounded-lg bg-white/10 border border-white/20 text-white placeholder-white/40 focus:outline-none focus:border-blue-500 mb-4 font-mono text-sm"
+              className="mb-2"
             />
-            <p className="text-white/60 text-xs mb-4">{bio.length} characters</p>
+            <p className="text-ink-muted text-xs mb-6">{bio.length} characters</p>
+
+            <div className="mb-6">
+              <h3 className="text-sm font-medium text-ink-muted mb-2">Approximate preview</h3>
+              <div className="bg-paper rounded-lg p-4">
+                <Paragraphs text={bio} />
+              </div>
+            </div>
+
             <div className="flex gap-3">
               <Button variant="success" className="flex-1" onClick={saveBio} disabled={saving.bio}>
                 {saving.bio ? 'Saving...' : 'Save'}
@@ -312,34 +343,34 @@ export default function SiteContent() {
             </div>
           </div>
         )}
-      </div>
+      </section>
 
       {/* === RESUME === */}
-      <div className="bg-white/5 rounded-lg p-8 border border-white/10">
-        <h3 className="text-2xl font-bold text-white mb-4">Resume</h3>
+      <section aria-labelledby="resume-heading" className={cardClass}>
+        <h2 id="resume-heading" className="font-serif text-2xl font-bold mb-4">Resume</h2>
 
         {settings?.resume_url && (
-          <div className="mb-6 p-4 rounded-lg bg-white/5 border border-white/10">
-            <p className="text-white/60 text-sm mb-2">Current resume:</p>
+          <div className="mb-6 p-4 rounded-lg bg-paper border border-rule">
+            <p className="text-ink-muted text-sm mb-2">Current resume:</p>
             <a
               href={settings.resume_url}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-blue-400 hover:text-blue-300 text-sm"
+              className="text-accent underline text-sm"
             >
-              Open uploaded PDF →
+              Open uploaded PDF (opens in a new tab) ↗
             </a>
           </div>
         )}
 
         {resume.file && (
-          <div className="mb-6 p-4 rounded-lg bg-white/5 border border-white/10">
-            <p className="text-white text-sm font-medium mb-2">Selected: {resume.file.name}</p>
-            <p className="text-white/60 text-sm">{formatFileSize(resume.file.size)}</p>
+          <div className="mb-6 p-4 rounded-lg bg-paper border border-rule">
+            <p className="text-sm font-medium mb-1">Selected: {resume.file.name}</p>
+            <p className="text-ink-muted text-sm">{formatFileSize(resume.file.size)}</p>
           </div>
         )}
 
-        <div className="flex gap-3">
+        <div className="flex flex-col gap-3 sm:flex-row">
           <FilePicker
             className="flex-1"
             accept="application/pdf"
@@ -360,12 +391,12 @@ export default function SiteContent() {
             </Button>
           )}
           {settings?.resume_url && (
-            <Button variant="danger" size="lg" onClick={removeResume}>
+            <Button variant="dangerOutline" size="lg" onClick={removeResume}>
               Remove
             </Button>
           )}
         </div>
-      </div>
+      </section>
     </div>
   )
 }

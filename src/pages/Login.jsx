@@ -19,34 +19,31 @@ const Login = () => {
 
   if (loading || isAdmin) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-ink">
-        <p role="status" className="text-paper">Loading...</p>
+      <div className="min-h-screen flex items-center justify-center bg-paper">
+        <p role="status" className="text-ink-muted">Loading...</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-ink">
+    <main className="min-h-screen flex flex-col items-center justify-center p-4 bg-paper">
       <h1
         style={{ letterSpacing: "0.09em" }}
-        className="transform -translate-y-6 md:-translate-y-10 text-4xl md:text-5xl lg:text-6xl text-paper font-semibold"
+        className="mb-8 text-4xl md:text-5xl lg:text-6xl text-ink font-semibold text-center"
       >
         Hello{" "}
-        <span
-          style={{ fontFamily: "'Dancing Script', cursive" }}
-          className="ml-2"
-        >
+        <span className="ml-2 font-script">
           Nikole
         </span>
       </h1>
 
-      <div className="surface-paper w-[90vw] sm:w-[70vw] md:w-[50vw] lg:w-[40vw] max-w-lg bg-paper/80 backdrop-blur-md border border-white/30 rounded-2xl p-8 shadow-lg">
-        <h2 className="text-center text-2xl md:text-3xl font-semibold text-ink mb-6">
-          Login
-        </h2>
+      <div className="w-full max-w-md bg-surface border border-rule rounded-2xl p-8 shadow-sm">
+        <p className="text-center text-ink-muted mb-2">
+          Sign in to manage your portfolio.
+        </p>
 
         {user ? (
-          <div role="alert" className="text-center">
+          <div role="alert" className="mt-4 text-center">
             <p className="text-ink mb-4">
               <strong>{user.email}</strong> doesn't have access to this admin.
             </p>
@@ -58,7 +55,7 @@ const Login = () => {
           <GoogleSignIn />
         )}
       </div>
-    </div>
+    </main>
   );
 };
 

@@ -84,7 +84,7 @@ function ConfirmDialogModal({ message, confirmLabel, pendingLabel, pending, onCo
         e.preventDefault()
         if (!pending) onCancel()
       }}
-      className="surface-paper m-auto w-[calc(100%-2rem)] max-w-sm rounded-lg bg-surface p-6 text-ink shadow-lg backdrop:bg-black/60"
+      className="m-autow-[calc(100%-2rem)] max-w-sm rounded-lg bg-surface p-6 text-ink shadow-lg backdrop:bg-black/60"
     >
       <h2 id={titleId} className="font-serif text-xl font-bold mb-2">
         Please confirm

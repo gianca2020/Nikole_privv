@@ -10,7 +10,7 @@ export default function StatusMessage({ kind, message, actionLabel, onAction }) 
       role={kind === 'error' ? 'alert' : 'status'}
       className="flex flex-col items-center gap-4 py-12 text-center"
     >
-      <p className={kind === 'error' ? 'text-white text-lg' : 'text-white/70 text-lg'}>{text}</p>
+      <p className={`text-lg ${kind === 'error' ? 'text-ink' : 'text-ink-muted'}`}>{text}</p>
       {actionLabel && onAction && kind !== 'loading' && (
         <Button variant={kind === 'error' ? 'secondary' : 'primary'} onClick={onAction}>
           {actionLabel}

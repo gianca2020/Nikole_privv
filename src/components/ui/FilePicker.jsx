@@ -7,7 +7,7 @@ export default function FilePicker({ children, disabled, className = '', ...inpu
     <label className={`block ${className}`}>
       <input type="file" className="peer sr-only" disabled={disabled} {...inputProps} />
       <span
-        className={`${buttonClass({ variant: 'primary', size: 'lg' })} w-full cursor-pointer peer-disabled:opacity-60 peer-disabled:cursor-not-allowed peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-paper`}
+        className={`${buttonClass({ variant: 'primary', size: 'lg' })} w-full cursor-pointer peer-disabled:opacity-60 peer-disabled:cursor-not-allowed peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-accent`}
       >
         {children}
       </span>

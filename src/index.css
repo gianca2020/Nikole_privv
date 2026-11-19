@@ -19,14 +19,16 @@
 }
 
 @layer base {
-  /* Cream ring is visible on the dark shell; burgundy takes over on paper surfaces. */
-  :focus-visible {
-    outline: 2px solid var(--color-paper);
-    outline-offset: 2px;
+  body {
+    background-color: var(--color-paper);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    line-height: 1.5;
   }
 
-  .surface-paper :focus-visible {
-    outline-color: var(--color-accent);
+  :focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
   }
 }
 

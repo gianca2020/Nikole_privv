@@ -3,6 +3,8 @@ import { useParams, useNavigate, Link } from 'react-router-dom'
 import { getArticle, createArticle, updateArticle } from '../lib/articles'
 import { useToast } from '../components/Toast'
 import useDocumentTitle from '../lib/useDocumentTitle'
+import useUnsavedChangesGuard from '../lib/useUnsavedChangesGuard'
+import ImagePreview from '../components/ui/ImagePreview'
 import Button from '../components/ui/Button'
 import Field from '../components/ui/Field'
 import StatusMessage from '../components/ui/StatusMessage'
@@ -47,6 +49,9 @@ export default function ArticleEdit() {
   const titleRef = useRef(null)
 
   const [form, setForm] = useState(emptyForm)
+  const initialRef = useRef(emptyForm)
+  const isDirty = JSON.stringify(form) !== JSON.stringify(initialRef.current)
+  const { allowNavigation } = useUnsavedChangesGuard(isDirty)
 
   useEffect(() => {
     if (!isNew) {
@@ -58,6 +63,7 @@ export default function ArticleEdit() {
     try {
       const data = await getArticle(id)
       const next = toForm(data)
+      initialRef.current = next
       setForm(next)
       if (next.image_url) {
         setImagePreview(next.image_url)
@@ -125,6 +131,7 @@ export default function ArticleEdit() {
         addToast('Article updated!', 'success')
       }
 
+      allowNavigation()
       navigate('/dashboard/articles')
     } catch (error) {
       addToast('Failed to save article', 'error')
@@ -145,18 +152,18 @@ export default function ArticleEdit() {
       <div className="mb-6">
         <Link
           to="/dashboard/articles"
-          className="inline-block text-white/70 hover:text-white mb-4"
+          className="inline-block text-ink-muted underline hover:text-ink mb-4"
         >
           ← Back to Articles
         </Link>
-        <h2 className="font-serif text-3xl font-bold text-white">
+        <h1 className="font-serif text-3xl font-bold">
           {isNew ? 'New Article' : 'Edit Article'}
-        </h2>
+        </h1>
       </div>
 
       <form
         onSubmit={handleSubmit}
-        className="surface-paper space-y-6 bg-paper rounded-lg p-8 border border-rule"
+        className="space-y-6 bg-surface rounded-lg p-8 border border-rule"
       >
         <Field
           label="Title"
@@ -217,17 +224,21 @@ export default function ArticleEdit() {
           />
           {imagePreview && (
             <div className="mt-4">
-              <img
+              <ImagePreview
                 src={imagePreview}
                 alt="Preview of the article image"
                 className="h-40 w-auto rounded-lg object-cover"
+                announce
               />
             </div>
           )}
         </div>
 
         <fieldset>
-          <legend className="block text-ink font-medium mb-3">Category</legend>
+          <legend className="block text-ink font-medium mb-1">Category</legend>
+          <p className="text-ink-muted text-sm mb-3">
+            Choose one. Articles without a category show as “Not categorized” in the article list.
+          </p>
           <div className="space-y-2">
             <label className="flex items-center gap-3 cursor-pointer">
               <input

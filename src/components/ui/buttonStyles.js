@@ -3,10 +3,11 @@ const buttonBase =
 
 const buttonVariants = {
   primary: 'bg-accent text-white hover:bg-[#6a001b]',
-  secondary: 'bg-paper text-ink border border-rule hover:bg-white',
+  secondary: 'bg-surface text-ink border border-rule hover:bg-paper',
   danger: 'bg-danger text-white hover:bg-[#8f1d13]',
+  dangerOutline: 'bg-transparent text-danger border border-danger hover:bg-danger hover:text-white',
   success: 'bg-success text-white hover:bg-[#175530]',
-  ghost: 'bg-transparent text-current hover:bg-white/10',
+  ghost: 'bg-transparent text-ink hover:bg-ink/5',
 }
 
 const buttonSizes = {

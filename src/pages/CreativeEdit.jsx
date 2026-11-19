@@ -3,6 +3,8 @@ import { useParams, useNavigate, Link } from 'react-router-dom'
 import { getCreative, createCreative, updateCreative } from '../lib/creatives'
 import { useToast } from '../components/Toast'
 import useDocumentTitle from '../lib/useDocumentTitle'
+import useUnsavedChangesGuard from '../lib/useUnsavedChangesGuard'
+import ImagePreview from '../components/ui/ImagePreview'
 import Button from '../components/ui/Button'
 import Field from '../components/ui/Field'
 import StatusMessage from '../components/ui/StatusMessage'
@@ -39,6 +41,9 @@ export default function CreativeEdit() {
   const roleRef = useRef(null)
 
   const [form, setForm] = useState(emptyForm)
+  const initialRef = useRef(emptyForm)
+  const isDirty = JSON.stringify(form) !== JSON.stringify(initialRef.current)
+  const { allowNavigation } = useUnsavedChangesGuard(isDirty)
 
   useEffect(() => {
     if (!isNew) {
@@ -50,6 +55,7 @@ export default function CreativeEdit() {
     try {
       const data = await getCreative(id)
       const next = toForm(data)
+      initialRef.current = next
       setForm(next)
       if (next.img_url) {
         setImagePreview(next.img_url)
@@ -107,6 +113,7 @@ export default function CreativeEdit() {
         addToast('Creative updated!', 'success')
       }
 
+      allowNavigation()
       navigate('/dashboard/creative')
     } catch (error) {
       addToast('Failed to save creative', 'error')
@@ -125,18 +132,18 @@ export default function CreativeEdit() {
       <div className="mb-6">
         <Link
           to="/dashboard/creative"
-          className="inline-block text-white/70 hover:text-white mb-4"
+          className="inline-block text-ink-muted underline hover:text-ink mb-4"
         >
           ← Back to Creatives
         </Link>
-        <h2 className="font-serif text-3xl font-bold text-white">
+        <h1 className="font-serif text-3xl font-bold">
           {isNew ? 'New Creative' : 'Edit Creative'}
-        </h2>
+        </h1>
       </div>
 
       <form
         onSubmit={handleSubmit}
-        className="surface-paper space-y-6 bg-paper rounded-lg p-8 border border-rule"
+        className="space-y-6 bg-surface rounded-lg p-8 border border-rule"
       >
         <Field
           label="Title"
@@ -183,10 +190,11 @@ export default function CreativeEdit() {
           />
           {imagePreview && (
             <div className="mt-4">
-              <img
+              <ImagePreview
                 src={imagePreview}
                 alt="Preview of the project image"
                 className="h-40 w-auto rounded-lg object-cover"
+                announce
               />
             </div>
           )}
