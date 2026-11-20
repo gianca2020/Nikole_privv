@@ -8,35 +8,28 @@ import useDocumentTitle from '../lib/useDocumentTitle'
 import { buttonClass } from '../components/ui/buttonStyles'
 import StatusMessage from '../components/ui/StatusMessage'
 
-function StoryLinks({ articles, emptyText }) {
-  if (articles.length === 0) {
-    return <p className="text-ink-muted">{emptyText}</p>
-  }
+function StoryLinks({ articles, emptyText, highlighted = false }) {
+  if (articles.length === 0) return <p className="text-ink-muted">{emptyText}</p>
   return (
-    <ul className="divide-y divide-rule">
-      {articles.map((article) => (
+    <ol className={`story-list ${highlighted ? 'highlight-list' : ''}`}>
+      {articles.map((article, i) => (
         <li key={article.id}>
-          <Link
-            to={`/dashboard/articles/${article.id}/edit`}
-            className="block py-3 hover:bg-paper -mx-2 px-2 rounded-md"
-          >
-            <span className="block font-serif text-lg font-semibold leading-snug break-words text-ink">
-              {article.title || 'Untitled'}
-            </span>
-            {storyMeta(article) && (
-              <span className="block text-sm text-ink-muted">{storyMeta(article)}</span>
-            )}
+          <span className="story-number" aria-hidden="true">{String(i + 1).padStart(2, '0')}</span>
+          <Link to={`/dashboard/articles/${article.id}/edit`}>
+            <span className="story-title">{highlighted ? <mark>{article.title || 'Untitled'}</mark> : article.title || 'Untitled'}</span>
+            {storyMeta(article) && <span className="story-meta">{storyMeta(article)}</span>}
           </Link>
+          <span className="story-arrow" aria-hidden="true">↗</span>
         </li>
       ))}
-    </ul>
+    </ol>
   )
 }
 
-function Section({ title, children }) {
+function Section({ title, children, label, className = '' }) {
   return (
-    <section className="rounded-lg border border-rule bg-surface p-6">
-      <h2 className="font-serif text-xl font-bold mb-3">{title}</h2>
+    <section className={`journal-section ${className}`}>
+      <div className="section-heading"><h2>{title}</h2>{label && <span className="eyebrow">{label}</span>}</div>
       {children}
     </section>
   )
@@ -76,16 +69,18 @@ export default function Home() {
   const settings = data?.settings
 
   return (
-    <div>
+    <div className="home-spread">
+      <div className="home-left">
+      <p className="eyebrow page-dateline">THE DAILY BRIEFING <span>01 / HOME</span></p>
       <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="font-serif text-4xl font-bold tracking-tight">
             Hello, <span className="text-accent">Nikole</span>
           </h1>
-          <p className="text-ink-muted">Manage your portfolio from here.</p>
+          <p className="text-ink-muted greeting-note">A new page. A story worth telling.</p>
         </div>
         <Link to="/dashboard/articles/new" className={buttonClass({ variant: 'primary', size: 'lg' })}>
-          New article
+          + New article
         </Link>
       </div>
 
@@ -98,25 +93,25 @@ export default function Home() {
         />
       ) : (
         <div className="space-y-6">
-          <div className="grid grid-cols-3 gap-3 sm:gap-6">
+          <div className="journal-stats">
             {stats.map((stat) => (
               <Link
                 key={stat.label}
                 to={stat.to}
-                className="rounded-lg border border-rule bg-surface p-4 sm:p-6 hover:bg-paper"
+                className="journal-stat"
               >
-                <span className="block font-serif text-3xl font-bold">{stat.value ?? '—'}</span>
-                <span className="block text-sm text-ink-muted">{stat.label}</span>
+                <span className="stat-value">{stat.value ?? '—'}</span>
+                <span className="stat-label">{stat.label}</span>
               </Link>
             ))}
           </div>
 
-          <div className="grid gap-6 lg:grid-cols-2">
-            <Section title="Highlights">
+          <Section title="Highlights" label="THE SELECTS" className="highlights-section">
               {!data ? (
                 <p role="status" className="text-ink-muted">Loading…</p>
               ) : articles ? (
                 <StoryLinks
+                  highlighted
                   articles={articles.filter((a) => a.is_highlight).slice(0, 5)}
                   emptyText="No highlights yet. Mark an article as a Highlight to feature it first."
                 />
@@ -125,7 +120,14 @@ export default function Home() {
               )}
             </Section>
 
-            <Section title="Recently added">
+        </div>
+      )}
+      <p className="home-scribble">Good stories start with a little curiosity. ↗</p>
+      </div>
+      <div className="home-right">
+        <p className="eyebrow page-dateline">ON THE RECORD <span>{new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', year: 'numeric' }).format(new Date())}</span></p>
+        <div className="right-page-heading"><p className="handwritten">A few things to keep in view.</p><span aria-hidden="true">✳</span></div>
+            <Section title="Recently added" label="LATEST ENTRIES">
               {!data ? (
                 <p role="status" className="text-ink-muted">Loading…</p>
               ) : articles ? (
@@ -134,9 +136,7 @@ export default function Home() {
                 <p className="text-ink-muted">Couldn't load articles.</p>
               )}
             </Section>
-          </div>
-
-          <Section title="Site content">
+          <Section title="Site content" label="THE BYLINE" className="site-status">
             {!data ? (
               <p role="status" className="text-ink-muted">Loading…</p>
             ) : settings ? (
@@ -150,7 +150,7 @@ export default function Home() {
                     <div key={label}>
                       <dt className="text-sm text-ink-muted">{label}</dt>
                       <dd className={present ? 'font-medium text-success' : 'font-medium text-ink-muted'}>
-                        {present ? 'Added' : 'Missing'}
+                        {present ? '● Added' : '○ Missing'}
                       </dd>
                     </div>
                   ))}
@@ -168,8 +168,8 @@ export default function Home() {
               <p className="text-ink-muted">Couldn't load site content.</p>
             )}
           </Section>
-        </div>
-      )}
+        <Link className="text-link site-edit-link" to="/dashboard/site">Manage site content ↗</Link>
+      </div>
     </div>
   )
 }
