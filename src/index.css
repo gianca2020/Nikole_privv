@@ -2,25 +2,31 @@
 @import "./styles/journal.css";
 
 @theme {
-  --font-serif: "Newsreader", Georgia, serif;
-  --font-sans: "Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
-  --font-hand: "Caveat", "Bradley Hand", cursive;
+  --font-serif: "Instrument Serif", Georgia, serif;
+  --font-sans: "Instrument Serif", Georgia, serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --font-hand: "Gloria Hallelujah", "Bradley Hand", cursive;
 
   --color-desk: #18181B;
-  --color-paper: #FAF7F0;
-  --color-surface: #FDFBF6;
-  --color-ink: #141413;
-  --color-ink-muted: #57534E;
-  --color-rule: #E6DFCE;
-  --color-rule-strong: #CFC6AF;
-  --color-accent: #DC2626;
-  --color-accent-strong: #B91C1C;
-  --color-highlight: #FEF08A;
+  --color-paper: #F3EAD6;
+  --color-surface: #F8F1E1;
+  --color-ink: #1C1812;
+  --color-ink-muted: #5A5040;
+  --color-rule: #D9CDB1;
+  --color-rule-strong: #BFAF8B;
+  --color-accent: #9B1C1C;
+  --color-accent-strong: #7F1717;
+  --color-highlight: #F3E27A;
   --color-success: #2F5D3A;
-  --color-danger: #B42318;
+  --color-danger: #8F1D13;
   --color-cover: #8A9A78;
   --color-cover-dark: #6F7F60;
+
+  /* Instrument Serif runs small: nudge the 'small' sizes up so notes and hints stay readable. */
+  --text-xs: 1rem;
+  --text-xs--line-height: 1.4;
+  --text-sm: 1.05rem;
+  --text-sm--line-height: 1.4;
 
   --radius-sm: 2px;
   --radius-md: 4px;
@@ -35,8 +41,10 @@
     background-color: var(--color-desk);
     color: var(--color-ink);
     font-family: var(--font-sans);
-    font-size: 1rem;
-    line-height: 1.6;
+    /* Instrument Serif runs small and has no bold, so it is set larger and never faux-bolded. */
+    font-size: 1.15rem;
+    line-height: 1.5;
+    font-synthesis: none;
   }
 
   :focus-visible {
@@ -44,7 +52,6 @@
     outline-offset: 2px;
   }
 
-  /* The notebook page is the only surface content sits on; inputs borrow its paper. */
   ::selection {
     background: var(--color-highlight);
     color: var(--color-ink);

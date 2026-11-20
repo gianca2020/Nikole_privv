@@ -2,7 +2,6 @@ import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { getCreative, createCreative, updateCreative } from '../lib/creatives'
 import { useToast } from '../components/Toast'
-import { turnOptions } from '../lib/pageTurn'
 import useDocumentTitle from '../lib/useDocumentTitle'
 import useUnsavedChangesGuard from '../lib/useUnsavedChangesGuard'
 import ImagePreview from '../components/ui/ImagePreview'
@@ -63,7 +62,7 @@ export default function CreativeEdit() {
       }
     } catch {
       addToast('Failed to load creative', 'error')
-      navigate('/dashboard/creative', turnOptions())
+      navigate('/dashboard/creative')
     } finally {
       setLoading(false)
     }
@@ -115,7 +114,7 @@ export default function CreativeEdit() {
       }
 
       allowNavigation()
-      navigate('/dashboard/creative', turnOptions())
+      navigate('/dashboard/creative')
     } catch (error) {
       addToast('Failed to save creative', 'error')
       console.error(error)
@@ -133,7 +132,7 @@ export default function CreativeEdit() {
       <div className="mb-6">
         <Link
           to="/dashboard/creative"
-          {...turnOptions()}
+         
           className="inline-block mono-meta underline decoration-accent decoration-2 underline-offset-4 hover:text-ink mb-4"
         >
           ← Back to Creatives
@@ -207,7 +206,7 @@ export default function CreativeEdit() {
           <Button type="submit" size="lg" className="flex-1" disabled={saving}>
             {saving ? 'Saving...' : isNew ? 'Create Creative' : 'Save Changes'}
           </Button>
-          <Button variant="secondary" size="lg" onClick={() => navigate('/dashboard/creative', turnOptions())}>
+          <Button variant="secondary" size="lg" onClick={() => navigate('/dashboard/creative')}>
             Cancel
           </Button>
         </div>

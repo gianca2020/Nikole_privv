@@ -7,15 +7,14 @@ import { AuthProvider } from './context/AuthContext'
 import { ToastProvider } from './components/Toast'
 import { ConfirmProvider } from './components/ConfirmDialog'
 import Login from './pages/Login'
-import Home from './pages/Home'
-import ArticleList from './pages/ArticleList'
 import ArticleEdit from './pages/ArticleEdit'
-import CreativeList from './pages/CreativeList'
 import CreativeEdit from './pages/CreativeEdit'
-import SiteContent from './pages/SiteContent'
 import RequireAuth from './components/RequireAuth'
 import Layout from './components/Layout'
 
+// The four section pages (Home, Articles, Creatives, Site Content) are pages of the notebook that
+// Layout draws from the URL, so their routes have no element of their own. Editors are real
+// route elements: Layout puts them on the loose sheet above the book.
 const router = createBrowserRouter([
   {
     path: '/',
@@ -26,14 +25,14 @@ const router = createBrowserRouter([
         path: 'dashboard',
         element: <RequireAuth><Layout /></RequireAuth>,
         children: [
-          { index: true, element: <Home /> },
-          { path: 'articles', element: <ArticleList /> },
+          { index: true },
+          { path: 'articles' },
           { path: 'articles/new', element: <ArticleEdit /> },
           { path: 'articles/:id/edit', element: <ArticleEdit /> },
-          { path: 'creative', element: <CreativeList /> },
+          { path: 'creative' },
           { path: 'creative/new', element: <CreativeEdit /> },
           { path: 'creative/:id/edit', element: <CreativeEdit /> },
-          { path: 'site', element: <SiteContent /> },
+          { path: 'site' },
         ],
       },
     ],

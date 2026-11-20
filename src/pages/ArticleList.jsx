@@ -2,7 +2,6 @@ import { useState, useEffect, useMemo } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { listArticles, deleteArticle } from '../lib/articles'
 import { storyMeta } from '../lib/format'
-import { turnOptions } from '../lib/pageTurn'
 import { useToast } from '../components/Toast'
 import { useConfirm } from '../components/ConfirmDialog'
 import useDocumentTitle from '../lib/useDocumentTitle'
@@ -120,7 +119,7 @@ export default function ArticleList() {
     <div>
       <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
         <h1 className="page-title">Articles</h1>
-        <Link to="/dashboard/articles/new" {...turnOptions()} className={buttonClass({ variant: 'primary' })}>
+        <Link to="/dashboard/articles/new" className={buttonClass({ variant: 'primary' })}>
           + New Article
         </Link>
       </div>
@@ -130,7 +129,7 @@ export default function ArticleList() {
           kind="empty"
           message="No articles yet."
           actionLabel="Add your first article"
-          onAction={() => navigate('/dashboard/articles/new', turnOptions())}
+          onAction={() => navigate('/dashboard/articles/new')}
         />
       ) : (
         <>
@@ -202,7 +201,7 @@ export default function ArticleList() {
                         variant="secondary"
                         size="sm"
                         aria-label={`Edit ${title}`}
-                        onClick={() => navigate(`/dashboard/articles/${article.id}/edit`, turnOptions())}
+                        onClick={() => navigate(`/dashboard/articles/${article.id}/edit`)}
                       >
                         Edit
                       </Button>

@@ -2,7 +2,6 @@ import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { getArticle, createArticle, updateArticle } from '../lib/articles'
 import { useToast } from '../components/Toast'
-import { turnOptions } from '../lib/pageTurn'
 import useDocumentTitle from '../lib/useDocumentTitle'
 import useUnsavedChangesGuard from '../lib/useUnsavedChangesGuard'
 import ImagePreview from '../components/ui/ImagePreview'
@@ -71,7 +70,7 @@ export default function ArticleEdit() {
       }
     } catch {
       addToast('Failed to load article', 'error')
-      navigate('/dashboard/articles', turnOptions())
+      navigate('/dashboard/articles')
     } finally {
       setLoading(false)
     }
@@ -133,7 +132,7 @@ export default function ArticleEdit() {
       }
 
       allowNavigation()
-      navigate('/dashboard/articles', turnOptions())
+      navigate('/dashboard/articles')
     } catch (error) {
       addToast('Failed to save article', 'error')
       console.error(error)
@@ -153,7 +152,7 @@ export default function ArticleEdit() {
       <div className="mb-6">
         <Link
           to="/dashboard/articles"
-          {...turnOptions()}
+         
           className="inline-block mono-meta underline decoration-accent decoration-2 underline-offset-4 hover:text-ink mb-4"
         >
           ← Back to Articles
@@ -238,7 +237,7 @@ export default function ArticleEdit() {
         </div>
 
         <fieldset>
-          <legend className="block text-ink font-medium mb-1">Category</legend>
+          <legend className="block font-mono text-[13px] uppercase tracking-[0.1em] text-ink mb-1">Category</legend>
           <p className="text-ink-muted text-sm mb-3">
             Choose one. Articles without a category show as “Not categorized” in the article list.
           </p>
@@ -272,7 +271,7 @@ export default function ArticleEdit() {
           <Button type="submit" size="lg" className="flex-1" disabled={saving}>
             {saving ? 'Saving...' : isNew ? 'Create Article' : 'Save Changes'}
           </Button>
-          <Button variant="secondary" size="lg" onClick={() => navigate('/dashboard/articles', turnOptions())}>
+          <Button variant="secondary" size="lg" onClick={() => navigate('/dashboard/articles')}>
             Cancel
           </Button>
         </div>

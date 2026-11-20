@@ -3,7 +3,6 @@ import { Link, useNavigate } from 'react-router-dom'
 import { listCreatives, deleteCreative } from '../lib/creatives'
 import { useToast } from '../components/Toast'
 import { useConfirm } from '../components/ConfirmDialog'
-import { turnOptions } from '../lib/pageTurn'
 import useDocumentTitle from '../lib/useDocumentTitle'
 import Button from '../components/ui/Button'
 import { buttonClass } from '../components/ui/buttonStyles'
@@ -71,7 +70,7 @@ export default function CreativeList() {
     <div>
       <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
         <h1 className="page-title">Creatives</h1>
-        <Link to="/dashboard/creative/new" {...turnOptions()} className={buttonClass({ variant: 'primary' })}>
+        <Link to="/dashboard/creative/new" className={buttonClass({ variant: 'primary' })}>
           + New Creative
         </Link>
       </div>
@@ -81,7 +80,7 @@ export default function CreativeList() {
           kind="empty"
           message="No creatives yet."
           actionLabel="Add your first creative"
-          onAction={() => navigate('/dashboard/creative/new', turnOptions())}
+          onAction={() => navigate('/dashboard/creative/new')}
         />
       ) : (
         <ul className="entry-list">
@@ -112,7 +111,7 @@ export default function CreativeList() {
                   variant="secondary"
                   size="sm"
                   aria-label={`Edit ${creative.title}`}
-                  onClick={() => navigate(`/dashboard/creative/${creative.id}/edit`, turnOptions())}
+                  onClick={() => navigate(`/dashboard/creative/${creative.id}/edit`)}
                 >
                   Edit
                 </Button>

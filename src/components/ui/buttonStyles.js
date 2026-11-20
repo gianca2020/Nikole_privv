@@ -1,21 +1,20 @@
-const buttonBase =
-  'inline-flex items-center justify-center gap-2 rounded-sm font-semibold transition-colors disabled:opacity-60 disabled:cursor-not-allowed'
-
+// Primary actions are a rubber-ink stamp; everything else is pencil on paper.
+// The look lives in journal.css (.stamp-btn, .pencil-btn, .ink-link).
 const buttonVariants = {
-  primary: 'bg-accent text-white hover:bg-accent-strong',
-  secondary: 'bg-transparent text-ink border border-ink hover:bg-ink hover:text-paper',
-  danger: 'bg-danger text-white hover:bg-[#8f1d13]',
-  dangerOutline: 'bg-transparent text-danger border border-danger hover:bg-danger hover:text-white',
-  success: 'bg-success text-white hover:bg-[#244a2d]',
-  ghost: 'bg-transparent text-ink underline decoration-accent decoration-2 underline-offset-4 hover:bg-highlight/60',
+  primary: 'stamp-btn',
+  success: 'stamp-btn',
+  danger: 'stamp-btn stamp-btn--danger',
+  dangerOutline: 'pencil-btn pencil-btn--danger',
+  secondary: 'pencil-btn',
+  ghost: 'ink-link',
 }
 
 const buttonSizes = {
-  sm: 'min-h-10 px-3 py-1.5 text-sm',
-  md: 'min-h-11 px-4 py-2 text-base',
-  lg: 'min-h-12 px-4 py-3 text-base',
+  sm: 'min-h-11 px-4 py-1.5 text-[13px]',
+  md: 'min-h-11 px-5 py-2 text-[14px]',
+  lg: 'min-h-12 px-6 py-3 text-[14px]',
 }
 
 export function buttonClass({ variant = 'primary', size = 'md', className = '' } = {}) {
-  return `${buttonBase} ${buttonVariants[variant]} ${buttonSizes[size]} ${className}`.trim()
+  return `${buttonVariants[variant]} ${buttonSizes[size]} disabled:cursor-not-allowed ${className}`.trim()
 }
