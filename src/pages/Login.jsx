@@ -1,68 +1,64 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "../lib/supabase";
+import { useAuth } from "../context/AuthContext";
+import useDocumentTitle from "../lib/useDocumentTitle";
 import GoogleSignIn from "../components/GoogleSignIn";
+import Button from "../components/ui/Button";
 
 const Login = () => {
+  useDocumentTitle("Sign in");
   const navigate = useNavigate();
-  const [checking, setChecking] = useState(true);
+  const { user, isAdmin, loading, signOut } = useAuth();
 
+  // Only approved admins are sent on; a signed-in non-admin stays here and sees why.
   useEffect(() => {
-    // Check for existing session
-    const checkSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        navigate("/dashboard");
-      } else {
-        setChecking(false);
-      }
-    };
+    if (!loading && isAdmin) {
+      navigate("/dashboard", { replace: true });
+    }
+  }, [loading, isAdmin, navigate]);
 
-    checkSession();
-
-    // Listen for auth state changes (handles OAuth callback)
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === 'SIGNED_IN' && session) {
-        navigate("/dashboard");
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, [navigate]);
-
-  if (checking) {
+  if (loading || isAdmin) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#1F1F1F]">
-        <p className="text-[#F6F1E8]">Loading...</p>
+      <div className="desk login-desk">
+        <p role="status" className="font-hand text-3xl text-paper/80">Opening the notebook…</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-[#1F1F1F]">
-      <h1
-        style={{ letterSpacing: "0.09em" }}
-        className="transform -translate-y-6 md:-translate-y-10 text-4xl md:text-5xl lg:text-6xl text-[#F6F1E8] font-semibold"
-      >
-        Hello{" "}
-        <span
-          style={{ fontFamily: "'Dancing Script', cursive" }}
-          className="ml-2"
-        >
-          Nikole
-        </span>
-      </h1>
+    <div className="desk login-desk">
+      <main className="login-cover">
+        <div className="cover-card">
+          <div className="cover-topline"><span>The reporter’s companion</span><span>No. 01</span></div>
+          <p className="cover-hand">private — book one</p>
+          <h1 className="cover-title">Nikole’s<br />Admin</h1>
+          <p className="cover-stamp" aria-hidden="true">Memo<br />Book</p>
+          <div className="cover-rule" />
+          <div className="cover-seal" aria-hidden="true">Heavy<br />weight<br />No. 01<br />100 lvs.</div>
 
-      <div className="w-[90vw] sm:w-[70vw] md:w-[50vw] lg:w-[40vw] max-w-lg bg-[#F6F1E8]/80 backdrop-blur-md border border-white/30 rounded-2xl p-8 shadow-lg">
-        <h2 className="text-center text-2xl md:text-3xl font-semibold text-[#1F1F1F] mb-6">
-          Login
-        </h2>
+          <div className="cover-actions">
+            <div className="cover-label">
+              <p className="mb-3 text-center text-ink-muted">
+                Sign in to manage your portfolio.
+              </p>
 
-        {/* Google login */}
-        <GoogleSignIn />
-      </div>
+              {user ? (
+                <div role="alert" className="text-center">
+                  <p className="mb-4 text-ink">
+                    <strong className="break-all">{user.email}</strong> doesn't have access to this admin.
+                  </p>
+                  <Button variant="secondary" onClick={signOut}>
+                    Use a different Google account
+                  </Button>
+                </div>
+              ) : (
+                <GoogleSignIn />
+              )}
+            </div>
+          </div>
+          <p className="cover-bottom"><span>Heavyweight paper</span><span>Property of N. Rajgor</span></p>
+        </div>
+      </main>
     </div>
   );
 };

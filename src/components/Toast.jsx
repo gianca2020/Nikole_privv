@@ -1,20 +1,14 @@
-import { createContext, useContext, useState, useCallback } from 'react'
+import { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react'
 
 const ToastContext = createContext()
 
 export function ToastProvider({ children }) {
   const [toasts, setToasts] = useState([])
+  const nextId = useRef(0)
 
   const addToast = useCallback((message, type = 'success', duration = 4000) => {
-    const id = Date.now()
-    setToasts(prev => [...prev, { id, message, type }])
-
-    if (duration > 0) {
-      setTimeout(() => {
-        setToasts(prev => prev.filter(t => t.id !== id))
-      }, duration)
-    }
-
+    const id = ++nextId.current
+    setToasts(prev => [...prev, { id, message, type, duration }])
     return id
   }, [])
 
@@ -38,9 +32,13 @@ export function useToast() {
   return context
 }
 
+// The live region stays mounted so screen readers announce toasts as they are added.
 function ToastContainer({ toasts, onRemove }) {
   return (
-    <div className="fixed bottom-4 right-4 z-50 space-y-2 pointer-events-none">
+    <div
+      aria-live="polite"
+      className="fixed bottom-24 right-4 left-4 lg:bottom-4 sm:left-auto z-50 space-y-2 pointer-events-none"
+    >
       {toasts.map(toast => (
         <Toast key={toast.id} toast={toast} onRemove={onRemove} />
       ))}
@@ -49,22 +47,38 @@ function ToastContainer({ toasts, onRemove }) {
 }
 
 function Toast({ toast, onRemove }) {
-  const bgColor = {
-    success: 'bg-green-600',
-    error: 'bg-red-600',
-    info: 'bg-blue-600',
-  }[toast.type] || 'bg-gray-600'
+  const [paused, setPaused] = useState(false)
+
+  // Auto-dismiss, paused while the pointer or keyboard focus is on the toast.
+  useEffect(() => {
+    if (toast.duration <= 0 || paused) return
+    const timer = setTimeout(() => onRemove(toast.id), toast.duration)
+    return () => clearTimeout(timer)
+  }, [paused, toast.duration, toast.id, onRemove])
+
+  const accent = {
+    success: 'border-l-success',
+    error: 'border-l-danger',
+    info: 'border-l-ink-muted',
+  }[toast.type] || 'border-l-ink-muted'
 
   return (
     <div
-      className={`${bgColor} text-white px-4 py-3 rounded-lg shadow-lg pointer-events-auto flex items-center gap-2`}
+      role={toast.type === 'error' ? 'alert' : 'status'}
+      onMouseEnter={() => setPaused(true)}
+      onMouseLeave={() => setPaused(false)}
+      onFocus={() => setPaused(true)}
+      onBlur={() => setPaused(false)}
+      className={`slip border-l-8 ${accent} px-4 py-3 pointer-events-auto flex items-center gap-2 sm:ml-auto sm:max-w-md`}
     >
       <span className="flex-1">{toast.message}</span>
       <button
+        type="button"
+        aria-label="Dismiss notification"
         onClick={() => onRemove(toast.id)}
-        className="text-white/70 hover:text-white"
+        className="min-h-10 min-w-10 px-2 py-1 text-ink-muted hover:text-ink"
       >
-        ✕
+        <span aria-hidden="true">✕</span>
       </button>
     </div>
   )

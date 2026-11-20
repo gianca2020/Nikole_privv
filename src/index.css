@@ -1,1 +1,62 @@
 @import "tailwindcss";
+@import "./styles/journal.css";
+
+@theme {
+  --font-serif: "Newsreader", Georgia, serif;
+  --font-sans: "Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --font-hand: "Caveat", "Bradley Hand", cursive;
+
+  --color-desk: #18181B;
+  --color-paper: #FAF7F0;
+  --color-surface: #FDFBF6;
+  --color-ink: #141413;
+  --color-ink-muted: #57534E;
+  --color-rule: #E6DFCE;
+  --color-rule-strong: #CFC6AF;
+  --color-accent: #DC2626;
+  --color-accent-strong: #B91C1C;
+  --color-highlight: #FEF08A;
+  --color-success: #2F5D3A;
+  --color-danger: #B42318;
+  --color-cover: #8A9A78;
+  --color-cover-dark: #6F7F60;
+
+  --radius-sm: 2px;
+  --radius-md: 4px;
+}
+
+@layer base {
+  html {
+    background-color: var(--color-desk);
+  }
+
+  body {
+    background-color: var(--color-desk);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    font-size: 1rem;
+    line-height: 1.6;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+
+  /* The notebook page is the only surface content sits on; inputs borrow its paper. */
+  ::selection {
+    background: var(--color-highlight);
+    color: var(--color-ink);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
