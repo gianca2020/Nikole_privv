@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { getCreative, createCreative, updateCreative } from '../lib/creatives'
 import { useToast } from '../components/Toast'
+import { turnOptions } from '../lib/pageTurn'
 import useDocumentTitle from '../lib/useDocumentTitle'
 import useUnsavedChangesGuard from '../lib/useUnsavedChangesGuard'
 import ImagePreview from '../components/ui/ImagePreview'
@@ -62,7 +63,7 @@ export default function CreativeEdit() {
       }
     } catch {
       addToast('Failed to load creative', 'error')
-      navigate('/dashboard/creative')
+      navigate('/dashboard/creative', turnOptions())
     } finally {
       setLoading(false)
     }
@@ -114,7 +115,7 @@ export default function CreativeEdit() {
       }
 
       allowNavigation()
-      navigate('/dashboard/creative')
+      navigate('/dashboard/creative', turnOptions())
     } catch (error) {
       addToast('Failed to save creative', 'error')
       console.error(error)
@@ -132,18 +133,20 @@ export default function CreativeEdit() {
       <div className="mb-6">
         <Link
           to="/dashboard/creative"
-          className="inline-block text-ink-muted underline hover:text-ink mb-4"
+          {...turnOptions()}
+          className="inline-block mono-meta underline decoration-accent decoration-2 underline-offset-4 hover:text-ink mb-4"
         >
           ← Back to Creatives
         </Link>
-        <h1 className="font-serif text-3xl font-bold">
+        <h1 className="page-title">
           {isNew ? 'New Creative' : 'Edit Creative'}
         </h1>
       </div>
 
       <form
         onSubmit={handleSubmit}
-        className="space-y-6 bg-surface rounded-lg p-8 border border-rule"
+        data-dirty={isDirty}
+        className="journal-form"
       >
         <Field
           label="Title"
@@ -193,18 +196,18 @@ export default function CreativeEdit() {
               <ImagePreview
                 src={imagePreview}
                 alt="Preview of the project image"
-                className="h-40 w-auto rounded-lg object-cover"
+                className="h-40 w-auto border border-rule-strong object-cover"
                 announce
               />
             </div>
           )}
         </div>
 
-        <div className="flex gap-3 pt-4">
+        <div className="form-actions">
           <Button type="submit" size="lg" className="flex-1" disabled={saving}>
             {saving ? 'Saving...' : isNew ? 'Create Creative' : 'Save Changes'}
           </Button>
-          <Button variant="secondary" size="lg" onClick={() => navigate('/dashboard/creative')}>
+          <Button variant="secondary" size="lg" onClick={() => navigate('/dashboard/creative', turnOptions())}>
             Cancel
           </Button>
         </div>

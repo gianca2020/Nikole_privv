@@ -11,7 +11,7 @@ export default function ImagePreview({ src, alt = '', className = '', announce =
     return (
       <p
         role={announce ? 'status' : undefined}
-        className={`flex items-center justify-center rounded-lg border border-dashed border-rule bg-paper px-3 text-center text-sm text-ink-muted ${className}`}
+        className={`flex items-center justify-center border border-dashed border-ink-muted bg-surface px-3 text-center text-sm text-ink-muted ${className}`}
       >
         Couldn't load this image — check the URL.
       </p>

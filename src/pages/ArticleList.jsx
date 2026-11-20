@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { listArticles, deleteArticle } from '../lib/articles'
 import { storyMeta } from '../lib/format'
+import { turnOptions } from '../lib/pageTurn'
 import { useToast } from '../components/Toast'
 import { useConfirm } from '../components/ConfirmDialog'
 import useDocumentTitle from '../lib/useDocumentTitle'
@@ -16,9 +17,9 @@ const CATEGORY_LABELS = {
 }
 
 const BADGE_STYLES = {
-  highlight: 'bg-accent text-white border-accent',
-  journalism: 'bg-surface text-ink-muted border-rule',
-  uncategorized: 'bg-surface text-ink-muted border-dashed border-ink-muted',
+  highlight: 'stamp-highlight',
+  journalism: 'stamp-journalism',
+  uncategorized: 'stamp-uncategorized',
 }
 
 // Mirrors the edit form: Highlight and Journalism are the only two choices;
@@ -118,8 +119,8 @@ export default function ArticleList() {
   return (
     <div>
       <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
-        <h1 className="font-serif text-3xl font-bold">Articles</h1>
-        <Link to="/dashboard/articles/new" className={buttonClass({ variant: 'primary' })}>
+        <h1 className="page-title">Articles</h1>
+        <Link to="/dashboard/articles/new" {...turnOptions()} className={buttonClass({ variant: 'primary' })}>
           + New Article
         </Link>
       </div>
@@ -129,7 +130,7 @@ export default function ArticleList() {
           kind="empty"
           message="No articles yet."
           actionLabel="Add your first article"
-          onAction={() => navigate('/dashboard/articles/new')}
+          onAction={() => navigate('/dashboard/articles/new', turnOptions())}
         />
       ) : (
         <>
@@ -142,16 +143,16 @@ export default function ArticleList() {
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Search headline or outlet"
-                className="w-full px-3 py-2 rounded-md bg-white border border-rule text-ink placeholder:text-ink-muted/70"
+                className="w-full px-3 py-2 rounded-sm bg-surface border border-ink/40 text-ink placeholder:text-ink-muted/70"
               />
             </div>
             <div>
-              <label htmlFor="article-sort" className="block text-sm text-ink-muted mb-1">Sort by</label>
+              <label htmlFor="article-sort" className="block mono-meta mb-1">Sort by</label>
               <select
                 id="article-sort"
                 value={sort}
                 onChange={(e) => setSort(e.target.value)}
-                className="px-3 py-2 rounded-md bg-white border border-rule text-ink"
+                className="min-h-11 px-3 py-2 rounded-sm bg-surface border border-ink/40 text-ink"
               >
                 <option value="published">Newest published</option>
                 <option value="added">Recently added</option>
@@ -166,51 +167,42 @@ export default function ArticleList() {
                 type="button"
                 aria-pressed={filter === f}
                 onClick={() => setFilter(f)}
-                className={`px-4 py-1.5 rounded-full border text-sm font-medium ${
-                  filter === f
-                    ? 'bg-ink text-paper border-ink'
-                    : 'bg-surface text-ink border-rule hover:bg-white'
-                }`}
+                className="filter-chip"
               >
                 {filterLabel(f)} <span className="opacity-80">({counts[f]})</span>
               </button>
             ))}
           </div>
 
-          <p aria-live="polite" className="text-sm text-ink-muted mb-2">
+          <p aria-live="polite" className="mono-meta mb-2">
             Showing {visibleArticles.length} of {articles.length}
           </p>
 
           {visibleArticles.length === 0 ? (
             <p className="text-ink-muted text-center py-8">No articles match your search or filter.</p>
           ) : (
-            <ul className="border-t border-rule">
+            <ul className="entry-list">
               {visibleArticles.map(article => {
                 const title = article.title || 'Untitled'
                 const category = categoryOf(article)
                 const meta = storyMeta(article)
                 return (
-                  <li
-                    key={article.id}
-                    className="flex flex-col gap-3 border-b border-rule py-4 md:flex-row md:items-start md:justify-between md:gap-6"
-                  >
+                  <li key={article.id} className="entry-row">
                     <div className="min-w-0">
-                      <h2 className="font-serif text-lg font-semibold leading-snug break-words line-clamp-2 md:line-clamp-none">
-                        {title}
+                      <h2 className="story-title line-clamp-3">
+                        {category === 'highlight' ? <mark>{title}</mark> : title}
                       </h2>
-                      <p className="text-sm text-ink-muted mt-1">{meta || 'No outlet or date'}</p>
+                      <p className="mono-meta mt-1">{meta || 'No outlet or date'}</p>
                     </div>
-                    <div className="flex flex-wrap items-center gap-2 md:shrink-0 md:justify-end">
-                      <span
-                        className={`rounded-full border px-2.5 py-0.5 text-xs font-medium whitespace-nowrap ${BADGE_STYLES[category]}`}
-                      >
+                    <div className="entry-actions">
+                      <span className={`stamp ${BADGE_STYLES[category]}`}>
                         {CATEGORY_LABELS[category]}
                       </span>
                       <Button
                         variant="secondary"
                         size="sm"
                         aria-label={`Edit ${title}`}
-                        onClick={() => navigate(`/dashboard/articles/${article.id}/edit`)}
+                        onClick={() => navigate(`/dashboard/articles/${article.id}/edit`, turnOptions())}
                       >
                         Edit
                       </Button>

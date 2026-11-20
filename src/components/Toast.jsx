@@ -37,7 +37,7 @@ function ToastContainer({ toasts, onRemove }) {
   return (
     <div
       aria-live="polite"
-      className="fixed bottom-4 right-4 left-4 sm:left-auto z-50 space-y-2 pointer-events-none"
+      className="fixed bottom-24 right-4 left-4 lg:bottom-4 sm:left-auto z-50 space-y-2 pointer-events-none"
     >
       {toasts.map(toast => (
         <Toast key={toast.id} toast={toast} onRemove={onRemove} />
@@ -56,11 +56,11 @@ function Toast({ toast, onRemove }) {
     return () => clearTimeout(timer)
   }, [paused, toast.duration, toast.id, onRemove])
 
-  const bgColor = {
-    success: 'bg-success',
-    error: 'bg-danger',
-    info: 'bg-ink-muted',
-  }[toast.type] || 'bg-ink-muted'
+  const accent = {
+    success: 'border-l-success',
+    error: 'border-l-danger',
+    info: 'border-l-ink-muted',
+  }[toast.type] || 'border-l-ink-muted'
 
   return (
     <div
@@ -69,14 +69,14 @@ function Toast({ toast, onRemove }) {
       onMouseLeave={() => setPaused(false)}
       onFocus={() => setPaused(true)}
       onBlur={() => setPaused(false)}
-      className={`${bgColor} text-white px-4 py-3 rounded-lg shadow-lg border border-white/20 pointer-events-auto flex items-center gap-2 sm:ml-auto sm:max-w-md`}
+      className={`slip border-l-8 ${accent} px-4 py-3 pointer-events-auto flex items-center gap-2 sm:ml-auto sm:max-w-md`}
     >
       <span className="flex-1">{toast.message}</span>
       <button
         type="button"
         aria-label="Dismiss notification"
         onClick={() => onRemove(toast.id)}
-        className="px-2 py-1 rounded text-white/80 hover:text-white"
+        className="min-h-10 min-w-10 px-2 py-1 text-ink-muted hover:text-ink"
       >
         <span aria-hidden="true">✕</span>
       </button>

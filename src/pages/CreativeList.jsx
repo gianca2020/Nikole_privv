@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { listCreatives, deleteCreative } from '../lib/creatives'
 import { useToast } from '../components/Toast'
 import { useConfirm } from '../components/ConfirmDialog'
+import { turnOptions } from '../lib/pageTurn'
 import useDocumentTitle from '../lib/useDocumentTitle'
 import Button from '../components/ui/Button'
 import { buttonClass } from '../components/ui/buttonStyles'
@@ -69,8 +70,8 @@ export default function CreativeList() {
   return (
     <div>
       <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
-        <h1 className="font-serif text-3xl font-bold">Creatives</h1>
-        <Link to="/dashboard/creative/new" className={buttonClass({ variant: 'primary' })}>
+        <h1 className="page-title">Creatives</h1>
+        <Link to="/dashboard/creative/new" {...turnOptions()} className={buttonClass({ variant: 'primary' })}>
           + New Creative
         </Link>
       </div>
@@ -80,55 +81,53 @@ export default function CreativeList() {
           kind="empty"
           message="No creatives yet."
           actionLabel="Add your first creative"
-          onAction={() => navigate('/dashboard/creative/new')}
+          onAction={() => navigate('/dashboard/creative/new', turnOptions())}
         />
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <ul className="entry-list">
           {creatives.map(creative => (
-            <div key={creative.id} className="flex flex-col bg-surface rounded-lg p-6 border border-rule">
+            <li key={creative.id} className="entry-row">
               {creative.img_url && (
                 <ImagePreview
                   src={creative.img_url}
                   alt=""
-                  className="w-full h-40 object-cover rounded-lg mb-4"
+                  className="w-full h-36 object-cover border border-rule-strong"
                 />
               )}
-              <h2 className="font-serif text-lg font-semibold leading-snug break-words mb-2">{creative.title}</h2>
-              <p className="text-ink-muted text-sm mb-4">{creative.role_description}</p>
+              <h2 className="story-title">{creative.title}</h2>
+              <p className="text-ink-muted">{creative.role_description}</p>
               {creative.link && (
                 <a
                   href={creative.link}
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label={`View ${creative.title} (opens in a new tab)`}
-                  className="text-accent underline text-sm mb-4 block"
+                  className="text-link self-start"
                 >
                   View ↗
                 </a>
               )}
-              <div className="mt-auto flex gap-2">
+              <div className="entry-actions">
                 <Button
                   variant="secondary"
                   size="sm"
-                  className="flex-1"
                   aria-label={`Edit ${creative.title}`}
-                  onClick={() => navigate(`/dashboard/creative/${creative.id}/edit`)}
+                  onClick={() => navigate(`/dashboard/creative/${creative.id}/edit`, turnOptions())}
                 >
                   Edit
                 </Button>
                 <Button
                   variant="dangerOutline"
                   size="sm"
-                  className="flex-1"
                   aria-label={`Delete ${creative.title}`}
                   onClick={() => handleDelete(creative.id, creative.title)}
                 >
                   Delete
                 </Button>
               </div>
-            </div>
+            </li>
           ))}
-        </div>
+        </ul>
       )}
     </div>
   )

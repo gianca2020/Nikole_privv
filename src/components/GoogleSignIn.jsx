@@ -36,7 +36,7 @@ export default function GoogleSignIn() {
       <button
         type="button"
         onClick={signInWithGoogle}
-        className="w-full py-3 mt-4 bg-white text-black border border-rule rounded-full text-base md:text-lg font-medium shadow-sm flex items-center justify-center gap-2 hover:bg-paper"
+        className="w-full min-h-12 py-3 bg-white text-black border border-ink rounded-sm text-base md:text-lg font-semibold flex items-center justify-center gap-2 hover:bg-highlight/60"
       >
         <GoogleMark />
         Continue with Google

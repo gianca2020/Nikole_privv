@@ -12,7 +12,7 @@ import Field from '../components/ui/Field'
 import FilePicker from '../components/ui/FilePicker'
 import StatusMessage from '../components/ui/StatusMessage'
 
-const cardClass = 'bg-surface rounded-lg p-6 sm:p-8 border border-rule'
+const cardClass = 'pb-8 border-b border-rule-strong'
 
 function paragraphsOf(text) {
   return text.split(/\n\s*\n/).map(p => p.trim()).filter(Boolean)
@@ -239,9 +239,9 @@ export default function SiteContent() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="font-serif text-3xl font-bold">Site Content</h1>
+        <h1 className="page-title">Site Content</h1>
         {settings?.updated_at && (
-          <p className="text-ink-muted text-sm mt-1">Last updated {formatDateTime(settings.updated_at)}</p>
+          <p className="mono-meta mt-1">Last updated {formatDateTime(settings.updated_at)}</p>
         )}
       </div>
 
@@ -256,7 +256,7 @@ export default function SiteContent() {
             <img
               src={settings.headshot_url}
               alt="Current headshot"
-              className="w-24 h-32 rounded-lg object-cover"
+              className="w-24 h-32 object-cover border border-rule-strong"
             />
           )}
         </div>
@@ -267,7 +267,7 @@ export default function SiteContent() {
             <img
               src={headshot.preview}
               alt="Preview of the new headshot"
-              className="w-40 h-52 rounded-lg object-cover"
+              className="w-40 h-52 object-cover border border-rule-strong"
             />
           </div>
         )}
@@ -301,13 +301,13 @@ export default function SiteContent() {
 
         {!bioEditing ? (
           <div>
-            <div className="bg-paper rounded-lg p-4 mb-6">
+            <div className="border border-dashed border-rule-strong p-4 mb-6">
               <Paragraphs text={bio} />
             </div>
             <Button onClick={() => setBioEditing(true)}>Edit</Button>
           </div>
         ) : (
-          <div>
+          <div data-bio-dirty={bio !== (settings?.bio || '')}>
             <Field
               label="Bio text"
               hint="Leave a blank line between paragraphs."
@@ -321,7 +321,7 @@ export default function SiteContent() {
 
             <div className="mb-6">
               <h3 className="text-sm font-medium text-ink-muted mb-2">Approximate preview</h3>
-              <div className="bg-paper rounded-lg p-4">
+              <div className="border border-dashed border-rule-strong p-4">
                 <Paragraphs text={bio} />
               </div>
             </div>
@@ -350,13 +350,13 @@ export default function SiteContent() {
         <h2 id="resume-heading" className="font-serif text-2xl font-bold mb-4">Resume</h2>
 
         {settings?.resume_url && (
-          <div className="mb-6 p-4 rounded-lg bg-paper border border-rule">
-            <p className="text-ink-muted text-sm mb-2">Current resume:</p>
+          <div className="mb-6 p-4 border border-dashed border-rule-strong">
+            <p className="mono-meta mb-2">Current resume</p>
             <a
               href={settings.resume_url}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-accent underline text-sm"
+              className="text-link text-sm"
             >
               Open uploaded PDF (opens in a new tab) ↗
             </a>
@@ -364,7 +364,7 @@ export default function SiteContent() {
         )}
 
         {resume.file && (
-          <div className="mb-6 p-4 rounded-lg bg-paper border border-rule">
+          <div className="mb-6 p-4 border border-dashed border-rule-strong">
             <p className="text-sm font-medium mb-1">Selected: {resume.file.name}</p>
             <p className="text-ink-muted text-sm">{formatFileSize(resume.file.size)}</p>
           </div>

@@ -1,7 +1,7 @@
 import { useId } from 'react'
 
 const controlClass =
-  'w-full px-3 py-2 rounded-md bg-white border border-rule text-ink placeholder:text-ink-muted/70 aria-[invalid=true]:border-danger aria-[invalid=true]:border-2'
+  'w-full px-3 py-2 rounded-sm bg-surface border border-ink/40 text-ink placeholder:text-ink-muted/70 aria-[invalid=true]:border-danger aria-[invalid=true]:border-2'
 
 // Labelled form control. Accepts `as="textarea"`; pass `ref` to focus it programmatically.
 // `required` is exposed as aria-required (not the native attribute) so the page's inline
@@ -15,7 +15,7 @@ export default function Field({ label, hint, error, required, as = 'input', clas
 
   return (
     <div>
-      <label htmlFor={id} className="block text-ink font-medium mb-1">
+      <label htmlFor={id} className="block text-ink font-semibold mb-1">
         {label}
         {required && <span className="text-danger" aria-hidden="true"> *</span>}
       </label>
