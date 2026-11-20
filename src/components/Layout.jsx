@@ -1,9 +1,16 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
+import { useEffect, useRef, useState } from 'react'
+import { Link, NavLink, useLocation, useNavigate, useOutlet } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useToast } from './Toast'
 import { useConfirm } from './ConfirmDialog'
-import { SECTIONS, isSectionRoot, prefersReducedMotion, sectionIndex, turnKind, usePrefersReducedMotion } from '../lib/pageTurn'
+import Book from './journal/Book'
+import ArticleList from '../pages/ArticleList'
+import CreativeList from '../pages/CreativeList'
+import SiteContent from '../pages/SiteContent'
+import { HomeLeft, HomeRight, HomeSingle } from '../pages/Home'
+import { useHomeData } from '../lib/useHomeData'
+import { SECTIONS, isEditorPath, pageForSection, sectionIndex } from '../lib/sections'
+import { useMediaQuery, usePrefersReducedMotion } from '../lib/useMedia'
 
 const COVER_KEY = 'nikole-cover-opened'
 
@@ -24,79 +31,62 @@ function rememberCover(opened) {
   }
 }
 
-function SectionNote({ index }) {
-  const section = SECTIONS[index]
-  return (
-    <aside className="page page-left section-note" aria-label={`About ${section.label}`}>
-      <p className="eyebrow">Nikole’s memo book</p>
-      <div className="section-number" aria-hidden="true">
-        0{index + 1}<span>/04</span>
-      </div>
-      <p className="section-name">{section.label}</p>
-      <p className="handwritten">{section.note}</p>
-      <p className="section-extra mono-meta">In this section</p>
-      <p className="section-extra">{section.blurb}</p>
-      <span className="margin-note section-extra" aria-hidden="true">keep making things.</span>
-    </aside>
-  )
-}
-
 export default function Layout() {
   const { user, signOut } = useAuth()
   const { addToast } = useToast()
   const { confirm } = useConfirm()
   const navigate = useNavigate()
   const location = useLocation()
+  const editorRoute = useOutlet()
+  const spread = useMediaQuery('(min-width: 1024px)')
+  const reducedMotion = usePrefersReducedMotion()
+
   const index = sectionIndex(location.pathname)
-  const mode = isSectionRoot(location.pathname) ? 'spread' : 'sheet'
+  const editing = isEditorPath(location.pathname)
+  const home = useHomeData(index === 0 && !editing)
 
   const [closed, setClosed] = useState(() => !coverAlreadyOpened())
   const [signingOut, setSigningOut] = useState(false)
+  const [announcement, setAnnouncement] = useState('')
+  const bookRef = useRef(null)
   const mainRef = useRef(null)
-  const coverButtonRef = useRef(null)
   const previousPath = useRef(location.pathname)
-  const viewTransition = !usePrefersReducedMotion()
 
-  // Tell the stylesheet which way the page is turning. This runs while React commits the new
-  // route, which is inside the browser's view-transition update callback, so the keyframes
-  // pick it up before the animation starts. Navigation itself is never delayed.
-  useLayoutEffect(() => {
-    const from = previousPath.current
-    if (from === location.pathname) return
-    document.documentElement.dataset.turn = turnKind(from, location.pathname)
+  // After the route changes, move focus to the page area and say where we landed.
+  useEffect(() => {
+    if (previousPath.current === location.pathname) return
     previousPath.current = location.pathname
     mainRef.current?.focus({ preventScroll: true })
     window.scrollTo({ top: 0, behavior: 'instant' })
-  }, [location.pathname])
+    setAnnouncement(editing ? 'Editor opened' : `${SECTIONS[index].label} page`)
+  }, [location.pathname, index, editing])
 
-  useEffect(() => () => {
-    delete document.documentElement.dataset.turn
-  }, [])
-
-  // A closed notebook starts with focus on its only control.
+  // A page the reader dragged away from unsaved edits turns back when they choose to stay.
   useEffect(() => {
-    if (closed) coverButtonRef.current?.focus({ preventScroll: true })
-    // Only on first mount; later opens/closes manage focus themselves.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+    const turnBack = () => bookRef.current?.flipTo(pageForSection(index, spread))
+    window.addEventListener('journal:nav-cancelled', turnBack)
+    return () => window.removeEventListener('journal:nav-cancelled', turnBack)
+  }, [index, spread])
 
   const openNotebook = () => {
     setClosed(false)
     rememberCover(true)
-    // Wait one frame so the page is no longer inert before moving focus into it.
     window.requestAnimationFrame(() => mainRef.current?.focus({ preventScroll: true }))
   }
 
-  const closeNotebook = () => {
-    setClosed(true)
-    window.requestAnimationFrame(() => coverButtonRef.current?.focus({ preventScroll: true }))
+  const openByHand = (target) => {
+    setClosed(false)
+    rememberCover(true)
+    if (target !== null && target !== index) navigate(SECTIONS[target].path)
   }
+
+  const closeNotebook = () => setClosed(true)
 
   const doSignOut = async () => {
     setSigningOut(true)
     setClosed(true)
     try {
-      await new Promise(resolve => window.setTimeout(resolve, prefersReducedMotion() ? 0 : 700))
+      await new Promise(resolve => window.setTimeout(resolve, reducedMotion ? 0 : 1000))
       await signOut()
       rememberCover(false)
       navigate('/')
@@ -119,12 +109,19 @@ export default function Layout() {
     }
   }
 
+  const sections = [
+    { left: <HomeLeft state={home} />, right: <HomeRight state={home} />, single: <HomeSingle state={home} /> },
+    { left: null, right: <ArticleList />, single: <ArticleList /> },
+    { left: null, right: <CreativeList />, single: <CreativeList /> },
+    { left: null, right: <SiteContent />, single: <SiteContent /> },
+  ]
+
   return (
     <div className="desk">
       <a href="#main" className="skip-link">Skip to content</a>
 
       <header className="desk-header">
-        <Link to="/dashboard" viewTransition={viewTransition} className="desk-brand">
+        <Link to="/dashboard" className="desk-brand">
           <span className="brand-monogram" aria-hidden="true">n.</span>
           Nikole Rajgor<span className="brand-long"> <span className="desk-divider">/</span> The editor’s desk</span>
         </Link>
@@ -145,16 +142,16 @@ export default function Layout() {
         </div>
       </header>
 
-      <div className="desk-stage">
-        <div className={`notebook ${closed ? 'is-closed' : ''}`} data-layout={mode}>
+      <main id="main" ref={mainRef} tabIndex={-1} className="desk-stage">
+        <div className="notebook" data-spread={spread} data-closed={closed}>
+          {/* Tabs sit outside the book: the book's 3D stage would otherwise trap position: fixed. */}
           <nav aria-label="Main" className="index-tabs" inert={closed}>
             {SECTIONS.map((item, i) => (
               <NavLink
                 key={item.path}
                 to={item.path}
                 end={item.end}
-                viewTransition={viewTransition}
-                className={({ isActive }) => `index-tab tab-${item.color} ${isActive ? 'is-active' : ''}`}
+                className={({ isActive }) => `index-tab ${isActive ? 'is-active' : ''}`}
               >
                 <span className="tab-number" aria-hidden="true">0{i + 1}</span>
                 <span className="tab-label">{item.label}</span>
@@ -162,42 +159,32 @@ export default function Layout() {
             ))}
           </nav>
 
-          <div className="notebook-body">
-            <main id="main" ref={mainRef} tabIndex={-1} className="notebook-main" inert={closed}>
-              {mode === 'sheet' ? (
-                <div className="sheet"><Outlet /></div>
-              ) : (
-                <div className="spread">
-                  {index !== 0 && <SectionNote index={index} />}
-                  {index === 0 ? <Outlet /> : <div className="page page-right"><Outlet /></div>}
-                </div>
-              )}
-            </main>
-            <div className="spiral" aria-hidden="true" />
-          </div>
-
-          <div className="notebook-cover" inert={!closed} aria-hidden={!closed}>
-            <div className="cover-face">
-              <div className="cover-card h-full">
-                <div className="cover-topline"><span>The reporter’s companion</span><span>No. 01</span></div>
-                <p className="cover-hand">private — book one</p>
-                <h2 className="cover-title">Nikole’s<br />Admin</h2>
-                <p className="cover-stamp" aria-hidden="true">Memo<br />Book</p>
-                <div className="cover-rule" />
-                <p className="cover-meta">Stories. Ideas. Work in progress.</p>
-                <div className="cover-seal" aria-hidden="true">Heavy<br />weight<br />No. 01<br />100 lvs.</div>
-                <div className="cover-actions">
-                  <button ref={coverButtonRef} type="button" onClick={openNotebook} disabled={signingOut} className="cover-open">
-                    Open the notebook ↗
-                  </button>
-                </div>
-                <p className="cover-bottom"><span>Heavyweight paper</span><span>Property of N. Rajgor</span></p>
-              </div>
-            </div>
-            <div className="cover-inside" />
+          <div className="book-region" inert={editing} aria-hidden={editing || undefined}>
+            <Book
+              bookRef={bookRef}
+              spread={spread}
+              closed={closed}
+              index={index}
+              sections={sections}
+              onSection={(i) => navigate(SECTIONS[i].path)}
+              onOpen={openNotebook}
+              onOpenByHand={openByHand}
+              onCloseByHand={closeNotebook}
+            />
           </div>
         </div>
-      </div>
+
+        {editing && (
+          <>
+            <div className="sheet-scrim" aria-hidden="true" />
+            <div className="loose-sheet">
+              <div className="loose-scroll">{editorRoute}</div>
+            </div>
+          </>
+        )}
+      </main>
+
+      <p className="sr-only" role="status" aria-live="polite">{announcement}</p>
 
       <p className="desk-caption">
         <span className="min-w-0 truncate" title={user?.email}>Private notes · {user?.email}</span>

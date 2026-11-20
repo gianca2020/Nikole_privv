@@ -20,7 +20,11 @@ export default function useUnsavedChangesGuard(isDirty) {
     confirm(
       'You have unsaved changes. Leave without saving?',
       () => blocker.proceed(),
-      () => blocker.reset(),
+      () => {
+        blocker.reset()
+        // Lets the notebook turn a hand-dragged page back to the section that is still open.
+        window.dispatchEvent(new Event('journal:nav-cancelled'))
+      },
       { confirmLabel: 'Leave', pendingLabel: 'Leaving…' }
     )
   }, [blocker, confirm])

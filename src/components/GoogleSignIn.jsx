@@ -36,13 +36,13 @@ export default function GoogleSignIn() {
       <button
         type="button"
         onClick={signInWithGoogle}
-        className="w-full min-h-12 py-3 bg-white text-black border border-ink rounded-sm text-base md:text-lg font-semibold flex items-center justify-center gap-2 hover:bg-highlight/60"
+        className="pencil-btn w-full min-h-12 py-3 bg-white/70 text-[14px]"
       >
         <GoogleMark />
         Continue with Google
       </button>
       {error && (
-        <p role="alert" className="mt-3 text-center text-sm font-medium text-danger">
+        <p role="alert" className="mt-3 text-center text-base text-danger">
           {error}
         </p>
       )}

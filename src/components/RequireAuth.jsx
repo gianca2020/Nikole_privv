@@ -7,7 +7,7 @@ export default function RequireAuth({ children }) {
   if (loading) {
     return (
       <div className="desk login-desk">
-        <p role="status" className="font-hand text-3xl text-paper/80">Opening the notebook…</p>
+        <p role="status" className="font-hand text-2xl text-paper/80">Opening the notebook…</p>
       </div>
     )
   }
